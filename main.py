@@ -11,20 +11,20 @@ try:
     db = client.get_database("Movies") # this gets the database named 'Movies'
     movieDetails = db.get_collection("MovieDetail")
 
-    client.server_info() # this is a hack to force the client to connect to the server so we can error out
+    client.server_info() # forces client to connect to server
     print("Connected successfully to the 'Movies' database!")
 
 except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
 
-def add_movie_details():
+def add_movie_details(): #defines what information we are looking to store
     imdb_id = "Sample id"
     Title = "Sample Title"
     Rating = "Sample Rating"
     RTM = "Sample RTM"
     DOR = "Sample DOR"
-    Genre = ["Genre1", "Genre2", "Genre3"]
+    Genre = ["Genre1", "Genre2", "Genre3"] #store multiple genres in order to better calculate similarity score
     Director = "Sample Director"
     Writers = ["Writer1", "Writer2", "Writer3"]
     Actors = [{
