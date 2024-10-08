@@ -1,0 +1,66 @@
+sampleDB = [
+    {  # record 1
+        "imdb_id (PK)": "tt0000001",
+        "title": "Title of the Movie",
+        "Rating": "US Ratings",
+        "RTM": "Runtime Minutes",
+        "DOR": "Date of Release in YYYY-MM-DD format",
+        "Genre": {[
+            # Some omdb movies will provide comma-separated genre values. We will check if the string has ',' and if so split-strip by ',' and store as list 
+            "Genre 1",
+            "Genre 2",
+            "Genre 3",  
+            ]},
+        "Director": "Name of the Director",
+        "Writer(s)": {[
+            # Same logic as the genre collection
+            "Writer 1",
+            "Writer 2"
+            ]},
+        "Actors": {
+            # omdb will always provide 3 main cast members
+            "Actor 1": {
+                "Name": "Actor 1",
+                "AI-Generated Photos":[
+                    "./path/to/generated/photo1",
+                    "./path/to/generated/photo2",
+                    "./path/to/generated/photo3",
+                    "./path/to/generated/photo4"
+                    ]},
+                "Name": "Actor 2",
+                "AI-Generated Photos":[
+                    "./path/to/generated/photo1",
+                    "./path/to/generated/photo2",
+                    "./path/to/generated/photo3",
+                    "./path/to/generated/photo4"
+                    ]},
+                "Name": "Actor 3",
+                "AI-Generated Photos":[
+                    "./path/to/generated/photo1",
+                    "./path/to/generated/photo2",
+                    "./path/to/generated/photo3",
+                    "./path/to/generated/photo4"
+                    ]}
+        },
+        "Plot": "OMDb provided summary plot or we might want to use the imdb id to scrape a longer plot text from the IMDb website",
+        "Estimated Budget": "Budget information scraped from the respective IMDb page–may not be feasible",
+        "Poster": "https://link.to.poster"
+        "Poster Key Phrases": {[
+            # Created using this GPT prompt (API later on): Using this poster (use the link to poster), provide a python list of 10 key phrases in string objects for this movie poster. Don't provide elaborate explanations, but be sure to include color scheme and similar fonts.
+            "Orange and blue contrast",
+            "Futuristic sans-serif font",
+            "Ryan Gosling front and center",
+            "Harrison Ford's return",
+            "Neon city skyline",
+            "Sci-Fi action vibes",
+            "Layered character composition",
+            "Dark and moody aesthetic",
+            "Bold, blocky title font",
+            "Dystopian urban landscape"
+        ]}
+    },
+    {   # record 2
+        ...
+    }
+
+]
