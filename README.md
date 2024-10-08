@@ -20,7 +20,7 @@ The `MovieDetail` collection in the `Movies` database has the following structur
   "Plot": "string",             // A brief description of the plot.
   "Estimated Budget": "string", // Estimated budget of the movie.
   "Poster": "string",           // URL or location of the movie poster.
-  "Poster Key Phrases": ["string"] // Descriptive key phrases for the movie poster.
+  "Poster Key Characteristics": {JSON object generated from GPT prompt} // Descriptive key characteristics for the movie poster.
 }
 ```
 
