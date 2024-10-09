@@ -1,5 +1,7 @@
 import os
-import openai
+from openai import OpenAI
+
+client = OpenAI()
 import json
 
 def get_movie_poster_details(poster_link):
@@ -17,16 +19,17 @@ def get_movie_poster_details(poster_link):
     art_style,\n\
     period_style.\n\
     If any information is unavailable, use 'unknown' as the value."
-    
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        max_tokens=300
-    )
-    
-    # Parse GPT response to JSON
-    details = json.loads(response['choices'][0]['text'].strip())
-    
+
+    response = client.chat.completions.create(model="gpt-4",  # or "gpt-4" if you're using GPT-4
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": prompt}
+    ],
+    max_tokens=300)
+
+    # Parse the GPT response and extract the text
+    details = json.loads(response.choices[0].message.content.strip())
+
     return details # will return details in JSON object
 
 def get_movie_poster_characteristics(poster_link):
@@ -59,3 +62,6 @@ def get_movie_poster_characteristics(poster_link):
     }
 
     return poster_document
+
+posterURL = "https://m.media-amazon.com/images/M/MV5BMzU3YWYwNTQtZTdiMC00NjY5LTlmMTMtZDFlYTEyODBjMTk5XkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_SX300.jpg"
+posterDeets = get_movie_poster_characteristics(posterURL)
