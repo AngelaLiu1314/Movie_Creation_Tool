@@ -2,3 +2,4 @@ pymongo
 python-dotenv
 IMDbPY
 cinemagoer
+pandas
