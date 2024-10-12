@@ -35,7 +35,7 @@ def add_movie_details(): #defines what information we are looking to store
     Plot = "Sample Plot goes here."
     Estimated_Budget = "Sample Budget"
     Poster = "Sample Poster Link"
-    Poster_Key_Phrases = [
+    Poster_Key_Characteristics = [
                         "Orange and blue contrast",
                         "Futuristic sans-serif font",
                         "Ryan Gosling front and center",
@@ -61,7 +61,7 @@ def add_movie_details(): #defines what information we are looking to store
         "Plot": Plot,
         "Estimated Budget": Estimated_Budget,
         "Poster": Poster,
-        "Poster Key Phrases": Poster_Key_Phrases
+        "Poster Key Phrases": Poster_Key_Characteristics
     }
 
     try:

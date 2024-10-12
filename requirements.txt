@@ -3,3 +3,4 @@ python-dotenv
 IMDbPY
 cinemagoer
 pandas
+openai
