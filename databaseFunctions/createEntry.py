@@ -64,7 +64,6 @@ def get_movie_poster_details(poster_link):
 mainDF = pd.read_csv("/Users/ianchang/Library/Mobile Documents/com~apple~CloudDocs/1. Project/Fall 2024/Movie_Creation_Tool-1/imdbProcessed_1.csv", low_memory= False)
 
 def add_movie_details(imdbID): #defines what information we are looking to store
-    # Change necessary to iterate through imdbID in dataframe of existing movie data (including input) – will be implemented later
     '''
     Input:
     Later, this function will iterate through a DataFrame to fetch movie data.
