@@ -129,9 +129,9 @@ def add_movie_details(imdbID): #defines what information we are looking to store
     except pymongo.errors.PyMongoError as e:
         print(f"An error occurred while adding the movie: {e}")
 
-def main():
-    add_movie_details()
-    client.close()
+# def main():
+#     add_movie_details()
+#     client.close()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
