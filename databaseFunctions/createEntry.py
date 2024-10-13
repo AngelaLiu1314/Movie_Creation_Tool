@@ -3,9 +3,9 @@ import os
 from dotenv import load_dotenv
 import pymongo
 from bson.objectid import ObjectId
-
+import requests
 import openai
-
+import pandas as pd
 
 load_dotenv() 
 mongodb_uri = os.getenv('MONGODB_URI') #retrieve mongodb uri from .env file
@@ -60,8 +60,11 @@ def get_movie_poster_details(poster_link):
     
     return details
 
-def add_movie_details(): #defines what information we are looking to store
-    # Change necessary to iterate through a dataframe of existing movie data (including input) – will be implemented later
+# Read in the main dataframe from which we'll get the IMDB IDs
+mainDF = pd.read_csv("/Users/ianchang/Library/Mobile Documents/com~apple~CloudDocs/1. Project/Fall 2024/Movie_Creation_Tool-1/imdbProcessed_1.csv", low_memory= False)
+
+def add_movie_details(imdbID): #defines what information we are looking to store
+    # Change necessary to iterate through imdbID in dataframe of existing movie data (including input) – will be implemented later
     '''
     Input:
     Later, this function will iterate through a DataFrame to fetch movie data.
@@ -75,40 +78,50 @@ def add_movie_details(): #defines what information we are looking to store
     The function inserts the constructed movieDetail document into a MongoDB collection and prints a confirmation of the insertion.
     '''
     
-    imdb_id = "Sample id"
-    Title = "Sample Title"
-    Rating = "Sample Rating"
-    RTM = "Sample RTM"
-    DOR = "Sample DOR"
-    Genre = ["Genre1", "Genre2", "Genre3"] #store multiple genres in order to better calculate similarity score
-    Director = "Sample Director"
-    Writers = ["Writer1", "Writer2", "Writer3"]
-    Actors = [{
-            "Actor 1": "Sample Actor1",
-            "Actor 2": "Sample Actor 2",
-            "Actor 3": "Sample Actor 3"
-            }]
-    # Get 3 main actors from OMDB API
+    load_dotenv()
 
-    Plot = "Sample Plot goes here."
-    Estimated_Budget = "Sample Budget"
-    Poster_Link = "Sample Poster Link"
-    Poster_Key_Characteristics = get_movie_poster_details(Poster_Link)
+    omdbAPIKey = os.getenv('OMDB-API-KEY')
+    url = f"http://www.omdbapi.com/?&apikey={omdbAPIKey}&i={imdbID}&plot=full&r=json()"
+    response = requests.get(url).json()
+    indexInDF = mainDF.index[mainDF["imdb_id"] == imdbID]
+
+    imdbID = imdbID
+    Title = response["Title"]
+    Rating = response["Rated"]
+    RTM = response["Title"]
+    DOR = mainDF.loc[indexInDF, "release_date"]
+    #store multiple genres in order to better calculate similarity score
+    Genre = [
+        response['Genre'].split(',')[0].strip(), 
+        response['Genre'].split(',')[1].strip(), 
+        response['Genre'].split(',')[2].strip()] 
+    director = response["Director"]
+
+    # Get 3 main actors from OMDB API
+    actors = [{
+            "Actor 1": response['Actors'].split(',')[0].strip(),
+            "Actor 2": response['Actors'].split(',')[1].strip(),
+            "Actor 3": response['Actors'].split(',')[2].strip()
+            }]
+
+    Plot = response["Plot"]
+    # Estimated_Budget = "Sample Budget" # hold for now
+    Poster_Link = response["Poster"]
+    # Poster_Key_Characteristics = get_movie_poster_details(Poster_Link) # hold until we have access to openai api
     
     movieDetail = {
-        "imdb_id": imdb_id,
+        "imdbID": imdbID,
         "title": Title,
-        "Rating": Rating,
-        "RTM": RTM,
-        "DOR": DOR,
-        "Genre": Genre,
-        "Director": "Name of the Director",
-        "Writer(s)": Writers,
-        "Actors": Actors,
-        "Plot": Plot,
-        "Estimated Budget": Estimated_Budget,
-        "Poster": Poster_Link,
-        "Poster Key Phrases": Poster_Key_Characteristics
+        "rating": Rating,
+        "runtimeMinutes": RTM,
+        "releaseDate": DOR,
+        "genre": Genre,
+        "director": director,
+        "actors": actors,
+        "plot": Plot,
+        # "Estimated Budget": Estimated_Budget, # hold for now
+        "posterLink": Poster_Link,
+        # "Poster Key Phrases": Poster_Key_Characteristics
     }
 
     try:
