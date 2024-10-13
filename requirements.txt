@@ -4,3 +4,4 @@ IMDbPY
 cinemagoer
 pandas
 openai
+requests
