@@ -1,9 +1,9 @@
-# Movie Database Project
+# Posterizer.ai
 
-## Description
+## Database
 This database is a crucial part of our final project designed to generate movie posters based on plot input. The system manages movie data using MongoDB, where each movie's metadata—such as title, rating, genre, director, actors, and plot—is stored in a `MovieDetail` collection. The ultimate goal is to feed movie plots into a custom algorithm that generates corresponding movie posters, using descriptive key phrases associated with each movie.
 
-## Data Model
+### Data Model
 The `MovieDetail` collection in the `Movies` database has the following structure:
 
 ```json
@@ -29,9 +29,7 @@ MongoDB was selected for its flexibility in handling unstructured and semi-struc
 
 Additionally, MongoDB allows for rapid iteration and evolution of the data model, making it ideal for handling the dynamic nature of this project, especially as we work toward integrating movie plot-based poster generation.
 
-## Team Setup Instructions
-
-### Steps for Internal Team Members
+### Database Configuration
 1. **Collaborator Access:**
    - The database owner, Angela, adds each team member as a collaborator in MongoDB Atlas.
    - Once added, each member can generate their own MongoDB connection string via MongoDB Atlas. This will ensure that team members can independently connect to the shared database.
@@ -40,7 +38,7 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
    - Once the connection string acquired, create a `.env` file in the project root directory.
    - Add your MongoDB Atlas connection string (URI) to this file:
      ```
-     MONGODB_URI=mongodb+srv://<username>:<password>@cluster-url.mongodb.net/?retryWrites=true&w=majority
+     MONGODB_URI=mongodb+srv://<username>:<password>@@movies.7r39n.mongodb.net/
      ```
    - Replace `<username>`, `<password>`, and `<cluster-url>` with your credentials.
 
@@ -55,18 +53,22 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
    mongodb_uri = os.getenv('MONGODB_URI')
 
    try:
-       client = pymongo.MongoClient(mongodb_uri)
-       db = client.get_database("Movies")
-       movieDetails = db.get_collection("MovieDetail")
-       client.server_info() 
-       print("Connected successfully to the 'Movies' database!")
+      client = pymongo.MongoClient(mongodb_uri) # this creates a client that can connect to our DB
+      db = client.get_database("movies") # this gets the database named 'Movies'
+      movieDetails = db.get_collection("movieDetails")
+
+      client.server_info() # forces client to connect to server
+      print("Connected successfully to the 'Movies' database!")
+
    except pymongo.errors.ConnectionFailure as e:
-       print(f"Could not connect to MongoDB: {e}")
-       exit(1)
+      print(f"Could not connect to MongoDB: {e}")
+      exit(1)
    ```
 
 4. **Database Design:**
-   - The database contains a `Movies` database with a `MovieDetail` collection, where each document represents a movie and its associated metadata such as plot, rating, genre, actors, and key phrases for poster generation.
+   - The database contains a `Movies` database with a `MovieDetails` collection, where each document represents a movie and its associated metadata such as plot, rating, genre, actors, and key phrases for poster generation.
 
 5. **Populating the Database:**
-   - Data insertion into the `MovieDetail` collection is done either manually or through automated scripts. The system will later integrate modules for generating movie posters based on plot descriptions.
+   - Data insertion into the `MovieDetails` collection is done either manually or through automated scripts. The system will later integrate modules for generating movie posters based on plot descriptions.
+
+## API
