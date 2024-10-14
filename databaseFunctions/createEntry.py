@@ -12,8 +12,8 @@ mongodb_uri = os.getenv('MONGODB_URI') #retrieve mongodb uri from .env file
 
 try:
     client = pymongo.MongoClient(mongodb_uri) # this creates a client that can connect to our DB
-    db = client.get_database("Movies") # this gets the database named 'Movies'
-    movieDetails = db.get_collection("MovieDetail")
+    db = client.get_database("movies") # this gets the database named 'Movies'
+    movieDetails = db.get_collection("movieDetails")
 
     client.server_info() # forces client to connect to server
     print("Connected successfully to the 'Movies' database!")
@@ -61,9 +61,18 @@ def get_movie_poster_details(poster_link):
     return details
 
 # Read in the main dataframe from which we'll get the IMDB IDs
-mainDF = pd.read_csv("/Users/ianchang/Library/Mobile Documents/com~apple~CloudDocs/1. Project/Fall 2024/Movie_Creation_Tool-1/imdbProcessed_1.csv", low_memory= False)
+mainDF = pd.read_csv(os.getenv("IMDBPROCESSED_DF_PATH"), low_memory= False)
 
-def add_movie_details(imdbID): #defines what information we are looking to store
+def get_omdb_response(imdbID):
+    omdbAPIKey = os.getenv('OMDB-API-KEY')
+    url = f"http://www.omdbapi.com/?&apikey={omdbAPIKey}&i={imdbID}&plot=full&r=json()"
+    response = requests.get(url).json()
+    indexInDF = mainDF.index[mainDF["imdb_id"] == imdbID]
+
+    return response, indexInDF
+
+
+def add_movie_details(imdbID, response, indexInDF): #defines what information we are looking to store
     '''
     Input:
     Later, this function will iterate through a DataFrame to fetch movie data.
@@ -76,32 +85,18 @@ def add_movie_details(imdbID): #defines what information we are looking to store
     Output:
     The function inserts the constructed movieDetail document into a MongoDB collection and prints a confirmation of the insertion.
     '''
-    
-    load_dotenv()
-
-    omdbAPIKey = os.getenv('OMDB-API-KEY')
-    url = f"http://www.omdbapi.com/?&apikey={omdbAPIKey}&i={imdbID}&plot=full&r=json()"
-    response = requests.get(url).json()
-    indexInDF = mainDF.index[mainDF["imdb_id"] == imdbID]
 
     imdbID = imdbID
     Title = response["Title"]
     Rating = response["Rated"]
-    RTM = response["Title"]
-    DOR = mainDF.loc[indexInDF, "release_date"]
+    RTM = mainDF.loc[indexInDF, "runtime"].values[0]
+    DOR = mainDF.loc[indexInDF, "release_date"].values[0]
     #store multiple genres in order to better calculate similarity score
-    Genre = [
-        response['Genre'].split(',')[0].strip(), 
-        response['Genre'].split(',')[1].strip(), 
-        response['Genre'].split(',')[2].strip()] 
+    Genre = [genre.strip() for genre in response["Genre"].split(',')] 
     director = response["Director"]
-
+    writers = [writer.strip() for writer in response["Writer"].split(",")]
     # Get 3 main actors from OMDB API
-    actors = [{
-            "Actor 1": response['Actors'].split(',')[0].strip(),
-            "Actor 2": response['Actors'].split(',')[1].strip(),
-            "Actor 3": response['Actors'].split(',')[2].strip()
-            }]
+    actors = [actor.strip() for actor in response["Actors"].split(",")]
 
     Plot = response["Plot"]
     # Estimated_Budget = "Sample Budget" # hold for now
@@ -116,6 +111,7 @@ def add_movie_details(imdbID): #defines what information we are looking to store
         "releaseDate": DOR,
         "genre": Genre,
         "director": director,
+        "writers": writers,
         "actors": actors,
         "plot": Plot,
         # "Estimated Budget": Estimated_Budget, # hold for now
@@ -135,3 +131,16 @@ def add_movie_details(imdbID): #defines what information we are looking to store
 
 # if __name__ == "__main__":
 #     main()
+
+# Start adding movie details to the database. Max daily responses for OMDB API is 1000, so we need to use an indexing variable to avoid repetitive addition
+lastIndex = 850 # Please try to update it based on the printed lastIndex before closing out
+for imdbID in mainDF.imdb_id[lastIndex:lastIndex + 800]:
+    lastIndex += 1
+    response, indexInDF = get_omdb_response(imdbID)
+    if response["Response"] == "False":
+        print(f"Error fetching data for imdbID: {imdbID}. Skipping...")
+        continue        
+    elif response["Response"] == "True":
+        add_movie_details(imdbID, response, indexInDF)
+
+print(lastIndex)
