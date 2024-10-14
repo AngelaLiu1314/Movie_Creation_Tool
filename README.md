@@ -31,7 +31,7 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
 
 ### Database Configuration
 1. **Collaborator Access:**
-   - The database owner, Angela, adds each team member as a collaborator in MongoDB Atlas.
+   - Admin adds collaborators as necessary in MongoDB Atlas.
    - Once added, each member can generate their own MongoDB connection string via MongoDB Atlas. This will ensure that team members can independently connect to the shared database.
 
 2. **Configure Environment Variables:**
