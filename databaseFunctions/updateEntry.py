@@ -21,3 +21,5 @@ try:
 except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
+
+# We need this separate file for updating the collection because the poster details will be added after the fact
