@@ -24,7 +24,11 @@ except pymongo.errors.ConnectionFailure as e:
 
 # We need this separate file for updating the collection because the poster details will be added after the fact
 '''
-sampleDB = {
+Schema Reminder:
+
+Database Name: movies
+Collection Name: movieDetails
+movieDetails = {
         "imdbID": str,
         "title": str,
         "rating": str,
@@ -51,3 +55,4 @@ sampleDB = {
         "posterCharactertistics": not yet created --> needs to be primary purpose of this file.
     }
 '''
+
