@@ -64,6 +64,21 @@ def get_movie_poster_details(poster_link):
 mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
 
 def get_omdb_response(imdbID):
+    '''
+    Input:
+    imdbID (str): The IMDB ID of the movie for which data needs to be fetched.
+
+    Processing:
+    - Retrieve the OMDB API key from environment variables.
+    - Construct the URL for the OMDB API call using the given imdbID.
+    - Make a request to the OMDB API and parse the response as JSON.
+    - Find the index of the movie in the main DataFrame (mainDF) that matches the provided imdbID.
+    
+    Output:
+    - response (dict): The JSON response from the OMDB API containing movie details.
+    - indexInDF (Index): The index/indices of the movie in mainDF that match the provided imdbID.
+    '''
+    
     omdbAPIKey = os.getenv('OMDB-API-KEY')
     url = f"http://www.omdbapi.com/?&apikey={omdbAPIKey}&i={imdbID}&plot=full&r=json()"
     response = requests.get(url).json()
@@ -75,15 +90,18 @@ def get_omdb_response(imdbID):
 def add_movie_details(imdbID, response, indexInDF): #defines what information we are looking to store
     '''
     Input:
-    Later, this function will iterate through a DataFrame to fetch movie data.
+    - imdbID (str): The IMDB ID of the movie.
+    - response (dict): The response from the OMDB API containing movie information.
+    - indexInDF (int): The index position in the main DataFrame where additional movie information can be fetched.
     
     Processing:
-    Movie Data Creation: The function assigns sample data (e.g., imdb_id, title, rating, etc.) for the movie.
-    Poster Details Fetching: It calls get_movie_poster_details() to retrieve key characteristics for the movie poster based on the poster link.
-    Document Construction: A dictionary (movieDetail) is created with all movie information, including poster details.
-    
+    - The function extracts data from the OMDB API response and the main DataFrame.
+    - Constructs a dictionary (movieDetail) with all movie-related details.
+    - Attempts to insert the constructed dictionary into a MongoDB collection.
+
     Output:
-    The function inserts the constructed movieDetail document into a MongoDB collection and prints a confirmation of the insertion.
+    - The function inserts the movieDetail document into a MongoDB collection and prints a confirmation message if successful.
+    - If there is an error during the insertion, it prints the error message.
     '''
 
     imdbID = imdbID
