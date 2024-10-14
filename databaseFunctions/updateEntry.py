@@ -52,7 +52,7 @@ movieDetails = {
                 },
         "plot": str,
         "posterlink": str
-        "posterCharactertistics": not yet created --> needs to be primary purpose of this file.
+        "posterCharactertistics": not yet created --> needs to be primary purpose of this file. But might end up being a collection of their own
     }
 '''
 
