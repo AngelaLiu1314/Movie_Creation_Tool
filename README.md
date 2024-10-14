@@ -1,6 +1,10 @@
 # Posterizer.ai
 
 ## Database
+<details>
+<summary>Expand for Database Information</summary>
+––––––––––––––––––––––––––––
+
 This database is a crucial part of our final project designed to generate movie posters based on plot input. The system manages movie data using MongoDB, where each movie's metadata—such as title, rating, genre, director, actors, and plot—is stored in a `MovieDetail` collection. The ultimate goal is to feed movie plots into a custom algorithm that generates corresponding movie posters, using descriptive key phrases associated with each movie.
 
 ### Data Model
@@ -70,5 +74,11 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
 
 5. **Populating the Database:**
    - Data insertion into the `MovieDetails` collection is done either manually or through automated scripts. The system will later integrate modules for generating movie posters based on plot descriptions.
+</details>
 
 ## API
+<details>
+<summary>Expand for API Information</summary>
+––––––––––––––––––––––––––––
+
+</details>
