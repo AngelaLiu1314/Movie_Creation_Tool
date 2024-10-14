@@ -23,3 +23,31 @@ except pymongo.errors.ConnectionFailure as e:
     exit(1)
 
 # We need this separate file for updating the collection because the poster details will be added after the fact
+'''
+sampleDB = {
+        "imdbID": str,
+        "title": str,
+        "rating": str,
+        "runtimeMinutes": float,
+        "releaseDate": datetime,
+        "genre": [
+            str,
+            str,
+            str  
+            ],
+        "director": "Name of the Director",
+        "writers": [
+            str,
+            str,
+            str
+            ],
+        "actors": {
+            str,
+            str,
+            str
+                },
+        "plot": str,
+        "posterlink": str
+        "posterCharactertistics": not yet created --> needs to be primary purpose of this file.
+    }
+'''
