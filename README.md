@@ -38,9 +38,9 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
    - Once the connection string acquired, create a `.env` file in the project root directory.
    - Add your MongoDB Atlas connection string (URI) to this file:
      ```
-     MONGODB_URI=mongodb+srv://<username>:<password>@@movies.7r39n.mongodb.net/
+     MONGODB_URI=mongodb+srv://<username>:<password>@movies.7r39n.mongodb.net/
      ```
-   - Replace `<username>`, `<password>`, and `<cluster-url>` with your credentials.
+   - Replace `<username>` and `<password>` with your credentials.
 
 3. **Run the Top Snippet to Connect to the Database:**
    - Use the provided database connection code snippet from the main project (as in the example below) to verify the connection and begin interacting with the database.
