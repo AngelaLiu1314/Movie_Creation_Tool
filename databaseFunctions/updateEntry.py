@@ -53,6 +53,30 @@ movieDetails = {
         "plot": str,
         "posterlink": str
         "posterCharactertistics": not yet created --> needs to be primary purpose of this file. But might end up being a collection of their own
+            { (possible design)
+                "title": str,
+                "tagline": str,
+                "genre": str,
+                "director_style": str,
+                "color_palette": {
+                    "primary": str,
+                    "secondary": str,
+                    "accent": str
+                }),
+                "font": {
+                    "title_font": str,
+                    "tagline_font": str,
+                    "credits_font": str
+                }),
+                "image_elements": {
+                    "main_character": str,
+                    "background": str
+                }),
+                "atmosphere": str,
+                "iconography": str,
+                "art_style": str,
+                "period_style": str 
+            }
     }
 '''
 
