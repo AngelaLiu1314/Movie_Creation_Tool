@@ -103,8 +103,8 @@ def add_movie_details(imdbID, response, indexInDF): #defines what information we
     - The function inserts the movieDetail document into a MongoDB collection and prints a confirmation message if successful.
     - If there is an error during the insertion, it prints the error message.
     '''
-    existing_movie = movieDetails.find_one({"imdbID": imdbID})
-    if existing_movie:
+    existingMovie = movieDetails.find_one({"imdbID": imdbID})
+    if existingMovie:
         print(f"Movie with imdbID {imdbID} already exists. Skipping insertion.")
         return
     else:
