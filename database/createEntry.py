@@ -80,11 +80,20 @@ def get_omdb_response(imdbID):
     '''
 
     omdbAPIKey = os.getenv('OMDB-API-KEY')
-    url = f"http://www.omdbapi.com/?&apikey={omdbAPIKey}&i={imdbID}&plot=full&r=json()"
-    response = requests.get(url).json()
-    indexInDF = mainDF.index[mainDF["imdb_id"] == imdbID]
-
-    return response, indexInDF
+    url = f"http://www.omdbapi.com/?i={imdbID}&apikey={omdbAPIKey}"
+    try:
+        # Set a reasonable timeout, e.g., 10 seconds
+        response = requests.get(url, timeout=10)
+        indexInDF = mainDF.index[mainDF["imdb_id"] == imdbID]
+        return response.json(), indexInDF
+    except requests.exceptions.ReadTimeout:
+        print(f"Request timed out for IMDB ID: {imdbID}")
+        indexInDF = mainDF.index[mainDF["imdb_id"] == imdbID]
+        return None, indexInDF
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        indexInDF = mainDF.index[mainDF["imdb_id"] == imdbID]
+        return None, indexInDF
 
 
 def add_movie_details(imdbID, response, indexInDF): #defines what information we are looking to store
@@ -103,6 +112,7 @@ def add_movie_details(imdbID, response, indexInDF): #defines what information we
     - The function inserts the movieDetail document into a MongoDB collection and prints a confirmation message if successful.
     - If there is an error during the insertion, it prints the error message.
     '''
+    # imdb id check to avoid redundant database storing
     existingMovie = movieDetails.find_one({"imdbID": imdbID})
     if existingMovie:
         print(f"Movie with imdbID {imdbID} already exists. Skipping insertion.")
@@ -147,16 +157,10 @@ def add_movie_details(imdbID, response, indexInDF): #defines what information we
         except pymongo.errors.PyMongoError as e:
             print(f"An error occurred while adding the movie: {e}")
 
-# def main():
-#     add_movie_details()
-#     client.close()
-
-# if __name__ == "__main__":
-#     main()
 
 # Start adding movie details to the database. Max daily responses for OMDB API is 1000, so we need to use an indexing variable to avoid repetitive addition
-lastIndex = 1850 # Please try to update it based on the printed lastIndex before closing out
-dailyBatchSize = 1000
+lastIndex = 6200 # Please try to update it based on the printed lastIndex before closing out
+dailyBatchSize = 3800
 
 for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
     response, indexInDF = get_omdb_response(imdbID)

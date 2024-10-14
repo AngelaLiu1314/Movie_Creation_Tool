@@ -7,6 +7,8 @@ import requests
 import openai
 import pandas as pd
 
+from createEntry import get_movie_poster_details
+
 load_dotenv() 
 mongodb_uri = os.getenv('MONGODB_URI') #retrieve mongodb uri from .env file
 
