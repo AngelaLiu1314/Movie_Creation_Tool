@@ -78,7 +78,7 @@ def get_omdb_response(imdbID):
     - response (dict): The JSON response from the OMDB API containing movie details.
     - indexInDF (Index): The index/indices of the movie in mainDF that match the provided imdbID.
     '''
-    
+
     omdbAPIKey = os.getenv('OMDB-API-KEY')
     url = f"http://www.omdbapi.com/?&apikey={omdbAPIKey}&i={imdbID}&plot=full&r=json()"
     response = requests.get(url).json()
@@ -103,45 +103,49 @@ def add_movie_details(imdbID, response, indexInDF): #defines what information we
     - The function inserts the movieDetail document into a MongoDB collection and prints a confirmation message if successful.
     - If there is an error during the insertion, it prints the error message.
     '''
+    existing_movie = movieDetails.find_one({"imdbID": imdbID})
+    if existing_movie:
+        print(f"Movie with imdbID {imdbID} already exists. Skipping insertion.")
+        return
+    else:
+        imdbID = imdbID
+        Title = response["Title"]
+        Rating = response["Rated"]
+        RTM = mainDF.loc[indexInDF, "runtime"].values[0]
+        DOR = mainDF.loc[indexInDF, "release_date"].values[0]
+        #store multiple genres in order to better calculate similarity score
+        Genre = [genre.strip() for genre in response["Genre"].split(',')] 
+        director = response["Director"]
+        writers = [writer.strip() for writer in response["Writer"].split(",")]
+        # Get 3 main actors from OMDB API
+        actors = [actor.strip() for actor in response["Actors"].split(",")]
 
-    imdbID = imdbID
-    Title = response["Title"]
-    Rating = response["Rated"]
-    RTM = mainDF.loc[indexInDF, "runtime"].values[0]
-    DOR = mainDF.loc[indexInDF, "release_date"].values[0]
-    #store multiple genres in order to better calculate similarity score
-    Genre = [genre.strip() for genre in response["Genre"].split(',')] 
-    director = response["Director"]
-    writers = [writer.strip() for writer in response["Writer"].split(",")]
-    # Get 3 main actors from OMDB API
-    actors = [actor.strip() for actor in response["Actors"].split(",")]
+        Plot = response["Plot"]
+        # Estimated_Budget = "Sample Budget" # hold for now
+        Poster_Link = response["Poster"]
+        # Poster_Key_Characteristics = get_movie_poster_details(Poster_Link) # hold until we have access to openai api
+        
+        movieDetail = {
+            "imdbID": imdbID,
+            "title": Title,
+            "rating": Rating,
+            "runtimeMinutes": RTM,
+            "releaseDate": DOR,
+            "genre": Genre,
+            "director": director,
+            "writers": writers,
+            "actors": actors,
+            "plot": Plot,
+            # "Estimated Budget": Estimated_Budget, # hold for now
+            "posterLink": Poster_Link,
+            # "Poster Key Phrases": Poster_Key_Characteristics
+        }
 
-    Plot = response["Plot"]
-    # Estimated_Budget = "Sample Budget" # hold for now
-    Poster_Link = response["Poster"]
-    # Poster_Key_Characteristics = get_movie_poster_details(Poster_Link) # hold until we have access to openai api
-    
-    movieDetail = {
-        "imdbID": imdbID,
-        "title": Title,
-        "rating": Rating,
-        "runtimeMinutes": RTM,
-        "releaseDate": DOR,
-        "genre": Genre,
-        "director": director,
-        "writers": writers,
-        "actors": actors,
-        "plot": Plot,
-        # "Estimated Budget": Estimated_Budget, # hold for now
-        "posterLink": Poster_Link,
-        # "Poster Key Phrases": Poster_Key_Characteristics
-    }
-
-    try:
-        result = movieDetails.insert_one(movieDetail)
-        print(f"Movie added with ID: {result.inserted_id}")
-    except pymongo.errors.PyMongoError as e:
-        print(f"An error occurred while adding the movie: {e}")
+        try:
+            result = movieDetails.insert_one(movieDetail)
+            print(f"Movie added with ID: {result.inserted_id}")
+        except pymongo.errors.PyMongoError as e:
+            print(f"An error occurred while adding the movie: {e}")
 
 # def main():
 #     add_movie_details()
