@@ -61,7 +61,7 @@ def get_movie_poster_details(poster_link):
     return details
 
 # Read in the main dataframe from which we'll get the IMDB IDs
-mainDF = pd.read_csv(os.getenv("IMDBPROCESSED_DF_PATH"), low_memory= False)
+mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
 
 def get_omdb_response(imdbID):
     omdbAPIKey = os.getenv('OMDB-API-KEY')
