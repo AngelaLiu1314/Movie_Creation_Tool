@@ -80,7 +80,7 @@ def get_omdb_response(imdbID):
     '''
 
     omdbAPIKey = os.getenv('OMDB-API-KEY')
-    url = f"http://www.omdbapi.com/?i={imdbID}&apikey={omdbAPIKey}"
+    url = f"http://www.omdbapi.com/?i={imdbID}&plot=full&apikey={omdbAPIKey}"
     try:
         # Set a reasonable timeout, e.g., 10 seconds
         response = requests.get(url, timeout=10)
@@ -159,8 +159,8 @@ def add_movie_details(imdbID, response, indexInDF): #defines what information we
 
 
 # Start adding movie details to the database. Max daily responses for OMDB API is 1000, so we need to use an indexing variable to avoid repetitive addition
-lastIndex = 10000 # Please try to update it based on the printed lastIndex before closing out
-dailyBatchSize = 80000
+lastIndex = 18102 # Please try to update it based on the printed lastIndex before closing out
+dailyBatchSize = 60000
 
 for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
     response, indexInDF = get_omdb_response(imdbID)
@@ -179,3 +179,6 @@ for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
 
 lastIndex += dailyBatchSize
 print(lastIndex)
+
+client.close()
+print("MongoDB connection closed.")
