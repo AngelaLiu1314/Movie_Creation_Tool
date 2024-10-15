@@ -29,6 +29,11 @@ except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
 
+# Root endpoint to welcome users to the API
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Movies API. Visit /movies to explore the collection."}
+
 # Pydantic model for a movie
 class Movie(BaseModel):
     imdbID: str
