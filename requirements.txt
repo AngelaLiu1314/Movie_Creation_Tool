@@ -5,4 +5,6 @@ cinemagoer
 pandas
 openai
 requests
-"fastapi[standard]"
+fastapi
+uvicorn
+pydantic
