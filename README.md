@@ -215,7 +215,7 @@ pm.test("imdbID has been set in the environment", function () {
 });
 ```
 
-**Collection Runner:** To test all requests sequentially, use the Collection Runner in Postman. This helps to automate the testing of each API command in a sequence, ensuring all operations (create, retrieve, update, delete, list) are working properly.
+**Collection Runner:** To test all requests sequentially, we use the Collection Runner in Postman. This helps to automate the testing of each API command in a sequence, ensuring all operations (create, retrieve, update, delete, list) are working properly.
 
 * Before running, we must make sure that the POST request runs first to create a new movie and sets the imdbID variable correctly for use in the GET, PUT, and DELETE requests (except for the last GET request which doesn't require an `imdbID`).
 
