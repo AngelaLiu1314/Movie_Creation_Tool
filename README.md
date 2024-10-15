@@ -103,5 +103,217 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
 <details>
 <summary>Expand for API Information</summary>
 ––––––––––––––––––––––––––––
+Here's a README file tailored to your FastAPI project:
+
+---
+
+# Movies API
+
+This is a FastAPI-based RESTful API for managing a collection of movies stored in a MongoDB database. The API allows users to retrieve, add, update, and delete movie details, such as title, rating, runtime, release date, genre, director, writers, actors, and more , based on the IMDb ID. The API serves as part of a movie management system, which interacts with the MongoDB `movieDetails` collection.
+
+## Features
+
+- **Get all movies**: Retrieve all movies stored in the database.
+- **Get a movie by IMDb ID**: Fetch details for a specific movie using its IMDb ID.
+- **Add a new movie**: Insert a new movie into the database.
+- **Update a movie**: Update details of a movie using its IMDb ID.
+- **Delete a movie**: Remove a movie from the database by its IMDb ID.
+
+---
+
+## Setup Instructions
+
+### 1. Set up the MongoDB Database
+Follow the instructions previously stated in the DataBase section of the README file. Before moving on, make sure your `.env` file includes the MongoDB connection string you requested from us and the path to the imdB file like so:
+```bash
+Mongo_URI=mongodb://<username>:<password>@<cluster-url>/<dbname>?retryWrites=true&w=majority
+IMDB_PROCESSED_DF_PATH=/Users/yourusername/Movie_Creation_Tool-1/imdbProcessed_1.csv
+```
+### 2. Install Dependencies
+Create a virtual environment and install packages using `requirements.txt` like so:
+
+```bash
+# Create a virtual environment
+python3 -m venv .venv
+
+# Activate the virtual environment
+source .venv/bin/activate  # On MacOS/Linux
+# .venv\Scripts\activate  # On Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 3. Run the API Application
+
+Move to the API directory then run the py file:
+
+```bash
+cd api
+python apiMain.py
+```
+
+### 4. Sample output
+
+After running the API, you should get an output similar to this:
+
+  ```
+Connected successfully to the 'Movies' database!
+imdbID='tt1517268' title='Barbie' rating='PG-13' runtimeMinutes=114.0 releaseDate='2023-07-19' genre=['Adventure', 'Comedy', 'Fantasy'] director='Greta Gerwig' writers=['Greta Gerwig', 'Noah Baumbach'] actors=['Margot Robbie', 'Ryan Gosling', 'Issa Rae'] plot='Barbie and Ken are having the time of their lives in the colorful and seemingly perfect world of Barbie Land. However, when they get a chance to go to the real world, they soon discover the joys and perils of living among humans.' posterLink='https://m.media-amazon.com/images/M/MV5BNjU3N2QxNzYtMjk1NC00MTc4LTk1NTQtMmUxNTljM2I0NDA5XkEyXkFqcGdeQXVyODE5NzE3OTE@._V1_SX300.jpg'
+  ```
+
+---
+
+## API Endpoints
+
+### 1. Get All Movies
+
+**Request**: `GET /movies`
+
+**Response**:
+
+```json
+[
+    {
+        "imdbID": "tt1517268",
+        "title": "Barbie",
+        "rating": "PG-13",
+        "runtimeMinutes": 114,
+        "releaseDate": "2023-07-21",
+        "genre": ["Adventure", "Comedy", "Fantasy"],
+        "director": "Greta Gerwig",
+        "writers": ["Greta Gerwig", "Noah Baumbach"],
+        "actors": ["Margot Robbie", "Ryan Gosling", "Simu Liu"],
+        "plot": "Barbie suffers a crisis that leads her to question her world and her existence.",
+        "posterLink": "https://someposterurl.com"
+    }
+]
+```
+
+### 2. Get a Movie by IMDb ID
+
+**Request**: `GET /movies/{imdbID}`
+
+- Example: `/movies/tt1517268`
+
+**Response**:
+
+```json
+{
+    "imdbID": "tt1517268",
+    "title": "Barbie",
+    "rating": "PG-13",
+    "runtimeMinutes": 114,
+    "releaseDate": "2023-07-21",
+    "genre": ["Adventure", "Comedy", "Fantasy"],
+    "director": "Greta Gerwig",
+    "writers": ["Greta Gerwig", "Noah Baumbach"],
+    "actors": ["Margot Robbie", "Ryan Gosling", "Simu Liu"],
+    "plot": "Barbie suffers a crisis that leads her to question her world and her existence.",
+    "posterLink": "https://someposterurl.com"
+}
+```
+
+### 3. Add a New Movie
+
+**Request**: `POST /movies`
+
+**Body** (example):
+
+```json
+{
+    "imdbID": "tt4154796",
+    "title": "Avengers: Endgame",
+    "rating": "PG-13",
+    "runtimeMinutes": 181,
+    "releaseDate": "2019-04-26",
+    "genre": ["Action", "Adventure", "Drama"],
+    "director": "Anthony Russo, Joe Russo",
+    "writers": ["Christopher Markus", "Stephen McFeely"],
+    "actors": ["Robert Downey Jr.", "Chris Evans", "Mark Ruffalo"],
+    "plot": "After the devastating events of Avengers: Infinity War, the universe is in ruins...",
+    "posterLink": "https://someposterurl.com"
+}
+```
+
+**Response**:
+
+```json
+{
+    "imdbID": "tt4154796",
+    "title": "Avengers: Endgame",
+    "rating": "PG-13",
+    "runtimeMinutes": 181,
+    "releaseDate": "2019-04-26",
+    "genre": ["Action", "Adventure", "Drama"],
+    "director": "Anthony Russo, Joe Russo",
+    "writers": ["Christopher Markus", "Stephen McFeely"],
+    "actors": ["Robert Downey Jr.", "Chris Evans", "Mark Ruffalo"],
+    "plot": "After the devastating events of Avengers: Infinity War, the universe is in ruins...",
+    "posterLink": "https://someposterurl.com"
+}
+```
+
+### 4. Update a Movie by IMDb ID
+
+**Request**: `PUT /movies/{imdbID}`
+
+- Example: `/movies/tt4154796`
+
+**Body** (similar to the `POST` body):
+
+```json
+{
+    "imdbID": "tt4154796",
+    "title": "Avengers: Endgame",
+    "rating": "PG-13",
+    "runtimeMinutes": 181,
+    "releaseDate": "2019-04-26",
+    "genre": ["Action", "Adventure", "Drama"],
+    "director": "Anthony Russo, Joe Russo",
+    "writers": ["Christopher Markus", "Stephen McFeely"],
+    "actors": ["Robert Downey Jr.", "Chris Evans", "Mark Ruffalo"],
+    "plot": "After the devastating events of Avengers: Infinity War, the universe is in ruins...",
+    "posterLink": "https://someposterurl.com"
+}
+```
+
+**Response**:
+
+```json
+{
+    "imdbID": "tt4154796",
+    "title": "Avengers: Endgame",
+    "rating": "PG-13",
+    "runtimeMinutes": 181,
+    "releaseDate": "2019-04-26",
+    "genre": ["Action", "Adventure", "Drama"],
+    "director": "Anthony Russo, Joe Russo",
+    "writers": ["Christopher Markus", "Stephen McFeely"],
+    "actors": ["Robert Downey Jr.", "Chris Evans", "Mark Ruffalo"],
+    "plot": "After the devastating events of Avengers: Infinity War, the universe is in ruins...",
+    "posterLink": "https://someposterurl.com"
+}
+```
+
+### 5. Delete a Movie by IMDb ID
+
+**Request**: `DELETE /movies/{imdbID}`
+
+- Example: `/movies/tt4154796`
+
+**Response**:
+
+```json
+{
+    "message": "Movie deleted successfully"
+}
+```
+
+---
+
+## Conclusion
+
+This API enables users to manage movie details via a RESTful interface. You can use tools like Postman to interact with it, or integrate it into a larger system that requires movie management functionality.
 
 </details>
