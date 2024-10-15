@@ -76,7 +76,7 @@ movieDetails = {
                 }),
                 "atmosphere": str,
                 "iconography": str,
-                "art_style": str,
+                "art_style": str, (animation, landscape photography, cast portrait, etc.)
                 "period_style": str 
             }
     }
