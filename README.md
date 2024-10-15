@@ -158,6 +158,32 @@ After running the API, you should get an output similar to this:
 Connected successfully to the 'Movies' database!
 imdbID='tt1517268' title='Barbie' rating='PG-13' runtimeMinutes=114.0 releaseDate='2023-07-19' genre=['Adventure', 'Comedy', 'Fantasy'] director='Greta Gerwig' writers=['Greta Gerwig', 'Noah Baumbach'] actors=['Margot Robbie', 'Ryan Gosling', 'Issa Rae'] plot='Barbie and Ken are having the time of their lives in the colorful and seemingly perfect world of Barbie Land. However, when they get a chance to go to the real world, they soon discover the joys and perils of living among humans.' posterLink='https://m.media-amazon.com/images/M/MV5BNjU3N2QxNzYtMjk1NC00MTc4LTk1NTQtMmUxNTljM2I0NDA5XkEyXkFqcGdeQXVyODE5NzE3OTE@._V1_SX300.jpg'
   ```
+---
+## Interacting with POSTMAN
+
+### 1. Setup
+
+Install the POSTMAN extension on Visual Studio Code (if you don't have it already install) and sign up. Run the following command on your terminal 
+
+```
+uvicorn apiMain:app --reload
+```
+The following line should appear, indicating that the request was successful:
+
+```
+INFO:     127.0.0.1:55293 - "GET / HTTP/1.1" 200 OK
+```
+You should also get the following line, indicating that you can access the application by navigating to http://127.0.0.1:8000 (in a web browser or using Postman like we will be doing):
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+Launch the POSTMAN extension on Visual Studio Code and sign in. 
+
+### 2. Interaction
+
+
+### 3. Sample output
 
 ---
 
