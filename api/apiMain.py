@@ -64,14 +64,14 @@ def get_movie_by_imdbID(imdbID: str):
 def add_movie(movie: Movie):
     if movieDetails.find_one({"imdbID": movie.imdbID}):
         raise HTTPException(status_code=400, detail="Movie already exists")
-    movieDetails.insert_one(movie.dict())
+    movieDetails.insert_one(movie.model_dump())
     return movie
 
 # Update a movie by IMDb ID
 @app.put("/movies/{imdbID}", response_model=Movie)
 def update_movie(imdbID: str, movie: Movie):
     updated_movie = movieDetails.find_one_and_update(
-        {"imdbID": imdbID}, {"$set": movie.dict()}, return_document=True
+        {"imdbID": imdbID}, {"$set": movie.model_dump()}, return_document=True
     )
     if not updated_movie:
         raise HTTPException(status_code=404, detail="Movie not found")
