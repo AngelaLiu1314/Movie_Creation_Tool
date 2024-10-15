@@ -4,7 +4,6 @@
 <details>
 <summary>Expand for Database Information</summary>
 ––––––––––––––––––––––––––––
-
 This database is a crucial part of our final project designed to generate movie posters based on plot input. The system manages movie data using MongoDB, where each movie's metadata—such as title, rating, genre, director, actors, and plot—is stored in a `movieDetails` collection. The ultimate goal is to feed movie plots into a custom algorithm that generates corresponding movie posters, using descriptive key characteristics associated with each poster.
 
 ### Data Model
@@ -103,12 +102,6 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
 <details>
 <summary>Expand for API Information</summary>
 ––––––––––––––––––––––––––––
-Here's a README file tailored to your FastAPI project:
-
----
-
-# Movies API
-
 This is a FastAPI-based RESTful API for managing a collection of movies stored in a MongoDB database. The API allows users to retrieve, add, update, and delete movie details, such as title, rating, runtime, release date, genre, director, writers, actors, and more , based on the IMDb ID. The API serves as part of a movie management system, which interacts with the MongoDB `movieDetails` collection.
 
 ## Features
