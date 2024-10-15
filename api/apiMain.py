@@ -16,10 +16,18 @@ load_dotenv()
 app = FastAPI()
 
 # Fetch MongoDB URI from environment variables
-mongo_uri = os.getenv("Mongo_URI")
-client = pymongo.MongoClient(mongo_uri)
-db = client["movies"]
-movies_collection = db["movieDetails"]
+try:
+    mongo_uri = os.getenv("Mongo_URI")
+    client = pymongo.MongoClient(mongo_uri)
+    db = client["movies"]
+    movieDetails = db["movieDetails"]
+
+    client.server_info() # forces client to connect to server
+    print("Connected successfully to the 'Movies' database!")
+
+except pymongo.errors.ConnectionFailure as e:
+    print(f"Could not connect to MongoDB: {e}")
+    exit(1)
 
 # Pydantic model for a movie
 class Movie(BaseModel):
@@ -38,7 +46,7 @@ class Movie(BaseModel):
 # Get all movies
 @app.get("/movies", response_model=List[Movie])
 def get_movies():
-    movies = list(movies_collection.find({}))
+    movies = list(movieDetails.find({}))
     if not movies:
         raise HTTPException(status_code=404, detail="No movies found")
     return [Movie(**movie) for movie in movies]
@@ -46,7 +54,7 @@ def get_movies():
 # Get a movie by IMDb ID
 @app.get("/movies/{imdbID}", response_model=Movie)
 def get_movie_by_imdbID(imdbID: str):
-    movie = movies_collection.find_one({"imdbID": imdbID})
+    movie = movieDetails.find_one({"imdbID": imdbID})
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
     return Movie(**movie)
@@ -54,15 +62,15 @@ def get_movie_by_imdbID(imdbID: str):
 # Add a new movie
 @app.post("/movies", response_model=Movie)
 def add_movie(movie: Movie):
-    if movies_collection.find_one({"imdbID": movie.imdbID}):
+    if movieDetails.find_one({"imdbID": movie.imdbID}):
         raise HTTPException(status_code=400, detail="Movie already exists")
-    movies_collection.insert_one(movie.dict())
+    movieDetails.insert_one(movie.dict())
     return movie
 
 # Update a movie by IMDb ID
 @app.put("/movies/{imdbID}", response_model=Movie)
 def update_movie(imdbID: str, movie: Movie):
-    updated_movie = movies_collection.find_one_and_update(
+    updated_movie = movieDetails.find_one_and_update(
         {"imdbID": imdbID}, {"$set": movie.dict()}, return_document=True
     )
     if not updated_movie:
@@ -72,7 +80,7 @@ def update_movie(imdbID: str, movie: Movie):
 # Delete a movie by IMDb ID
 @app.delete("/movies/{imdbID}")
 def delete_movie(imdbID: str):
-    result = movies_collection.delete_one({"imdbID": imdbID})
+    result = movieDetails.delete_one({"imdbID": imdbID})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Movie not found")
     return {"message": "Movie deleted successfully"}
