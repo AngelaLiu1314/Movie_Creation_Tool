@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pydantic import Field
 from typing import List, Optional
+import pymongo
 from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
@@ -16,7 +17,7 @@ app = FastAPI()
 
 # Fetch MongoDB URI from environment variables
 mongo_uri = os.getenv("Mongo_URI")
-client = MongoClient(mongo_uri)
+client = pymongo.MongoClient(mongo_uri)
 db = client["movies"]
 movies_collection = db["movieDetails"]
 
