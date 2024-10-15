@@ -54,6 +54,7 @@ def get_movies():
 # Get a movie by IMDb ID
 @app.get("/movies/{imdbID}", response_model=Movie)
 def get_movie_by_imdbID(imdbID: str):
+    imdbID = imdbID.strip()
     movie = movieDetails.find_one({"imdbID": imdbID})
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
@@ -70,6 +71,7 @@ def add_movie(movie: Movie):
 # Update a movie by IMDb ID
 @app.put("/movies/{imdbID}", response_model=Movie)
 def update_movie(imdbID: str, movie: Movie):
+    imdbID = imdbID.strip()
     updated_movie = movieDetails.find_one_and_update(
         {"imdbID": imdbID}, {"$set": movie.model_dump()}, return_document=True
     )
@@ -80,6 +82,7 @@ def update_movie(imdbID: str, movie: Movie):
 # Delete a movie by IMDb ID
 @app.delete("/movies/{imdbID}")
 def delete_movie(imdbID: str):
+    imdbID = imdbID.strip()
     result = movieDetails.delete_one({"imdbID": imdbID})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Movie not found")
