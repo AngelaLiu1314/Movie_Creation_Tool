@@ -4,6 +4,7 @@
 <details>
 <summary>Expand for Database Information</summary>
 ––––––––––––––––––––––––––––
+
 This database is a crucial part of our final project designed to generate movie posters based on plot input. The system manages movie data using MongoDB, where each movie's metadata—such as title, rating, genre, director, actors, and plot—is stored in a `movieDetails` collection. The ultimate goal is to feed movie plots into a custom algorithm that generates corresponding movie posters, using descriptive key characteristics associated with each poster.
 
 ### Data Model
@@ -102,6 +103,7 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
 <details>
 <summary>Expand for API Information</summary>
 ––––––––––––––––––––––––––––
+
 This is a FastAPI-based RESTful API for managing a collection of movies stored in a MongoDB database. The API allows users to retrieve, add, update, and delete movie details, such as title, rating, runtime, release date, genre, director, writers, actors, and more , based on the IMDb ID. The API serves as part of a movie management system, which interacts with the MongoDB `movieDetails` collection.
 
 ## Features
@@ -118,22 +120,24 @@ This is a FastAPI-based RESTful API for managing a collection of movies stored i
 
 ### 1. Set up the MongoDB Database
 Follow the instructions previously stated in the DataBase section of the README file. Before moving on, make sure your `.env` file includes the MongoDB connection string you requested from us and the path to the imdB file like so:
+
 ```bash
 Mongo_URI=mongodb://<username>:<password>@<cluster-url>/<dbname>?retryWrites=true&w=majority
-IMDB_PROCESSED_DF_PATH=/Users/yourusername/Movie_Creation_Tool-1/imdbProcessed_1.csv
+IMDB_PROCESSED_DF_PATH=/Users/yourusername/Movie_Creation_Tool/imdbProcessed_1.csv
 ```
+
 ### 2. Install Dependencies
-Create a virtual environment and install packages using `requirements.txt` like so:
+Create a virtual environment and install packages using `requirements.txt` by running the following commands on your terminal:
 
 ```bash
-# Create a virtual environment
+# To create the virtual environment
 python3 -m venv .venv
 
-# Activate the virtual environment
+# To activate the virtual environment
 source .venv/bin/activate  # On MacOS/Linux
-# .venv\Scripts\activate  # On Windows
+.venv\Scripts\activate  # On Windows
 
-# Install dependencies
+# To install dependencies
 pip install -r requirements.txt
 ```
 
