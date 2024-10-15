@@ -100,7 +100,7 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
 </details>
 
 ## API
-<detailsd>
+<details>
 <summary>Expand for API Information</summary>
 ––––––––––––––––––––––––––––
 
