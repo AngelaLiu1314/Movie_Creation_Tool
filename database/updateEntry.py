@@ -10,7 +10,7 @@ import pandas as pd
 from createEntry import get_movie_poster_details
 
 load_dotenv() 
-mongodb_uri = os.getenv('MONGODB_URI') #retrieve mongodb uri from .env file
+mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
 
 try:
     client = pymongo.MongoClient(mongodb_uri) # this creates a client that can connect to our DB
