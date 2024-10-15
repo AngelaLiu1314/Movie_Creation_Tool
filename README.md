@@ -100,7 +100,7 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
 </details>
 
 ## API
-<details>
+<detailsd>
 <summary>Expand for API Information</summary>
 ––––––––––––––––––––––––––––
 
@@ -166,7 +166,7 @@ imdbID='tt1517268' title='Barbie' rating='PG-13' runtimeMinutes=114.0 releaseDat
 Install the POSTMAN extension on Visual Studio Code (if you don't have it already install) and sign up. Run the following command on your terminal 
 
 ```
-uvicorn apiMain:app --reload
+uvicorn api.apiMain:app --reload
 ```
 The following line should appear, indicating that the request was successful:
 
@@ -178,13 +178,49 @@ You should also get the following line, indicating that you can access the appli
 ```
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
-Launch the POSTMAN extension on Visual Studio Code and sign in. 
+Launch the POSTMAN extension on Visual Studio Code and sign in.
+
+#### Our 5 main API commands are stored under the Movies API Tests Collection
+1. `POST/http://127.0.0.1:8000/movies`
+2. `GET/http://127.0.0.1:8000/movies/{{imdbID}}`
+3. `POST/http://127.0.0.1:8000/movies/{{imdbID}}`
+4. `DELETE/http://127.0.0.1:8000/movies/{{imdbID}}`
+5. `GET/http://127.0.0.1:8000/movies`
+
+### **MAKE SURE YOUR DB HAS UNIQUE INDEXES FOR API TESTING**
 
 ### 2. Interaction
+#### Postman Setup for Running API Commands
 
+**Collection Variables:** In order to run the requests using the collection, we set up `{{imdbID}}` as a collection variable for requests that require keying using `imdbID`. (You can set this variable manually or use scripts in the **Scripts** tab of your **POST** request to set it dynamically)
 
-### 3. Sample output
+* Example of a script to set the `imdbID` after creating a movie:
 
+```js
+let responseJson = pm.response.json();
+pm.collectionVariables.set("imdbID", responseJson.imdbID);
+pm.test("imdbID has been set in the collection", function () {
+    pm.expect(pm.collectionVariables.get("imdbID")).to.eql(responseJson.imdbID);
+});
+```
+
+**Environment Variables:** Alternatively, you can set imdbID as an environment variable to use across multiple requests.
+
+* To set an environment variable in the **Scripts** tab, we use:
+
+```js
+pm.environment.set("imdbID", pm.response.json().imdbID);
+pm.test("imdbID has been set in the environment", function () {
+    pm.expect(pm.environment.get("imdbID")).to.eql(responseJson.imdbID);
+});
+```
+
+**Collection Runner:** To test all requests sequentially, use the Collection Runner in Postman. This helps to automate the testing of each API command in a sequence, ensuring all operations (create, retrieve, update, delete, list) are working properly.
+
+* Before running, we must make sure that the POST request runs first to create a new movie and sets the imdbID variable correctly for use in the GET, PUT, and DELETE requests (except for the last GET request which doesn't require an `imdbID`).
+
+### 3. Sample output of a Collection Run
+![alt text](./readmeImages/collectionrun.png)
 ---
 
 ## API Endpoints
