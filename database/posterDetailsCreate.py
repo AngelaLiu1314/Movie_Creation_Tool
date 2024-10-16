@@ -8,7 +8,8 @@ from bson.objectid import ObjectId
 import requests
 import openai
 import pandas as pd
-from database.posterDetailsGPT import get_movie_poster_details
+from posterDetailsGPT import get_movie_poster_details
+import certifi
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
@@ -17,8 +18,8 @@ mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
 FASTAPI_URL = "http://127.0.0.1:8000"
 
 try:
-    client = pymongo.MongoClient(mongodb_uri) # this creates a client that can connect to our DB
-    db = client.get_database("movies") # this gets the database named 'Movies'
+    client = pymongo.MongoClient(mongodb_uri,tlsCAFile=certifi.where()) # this creates a client that can connect to our DB
+    db = client.get_database("movies") # this gets the database named 'movies'
     movieDetails = db.get_collection("movieDetails")
     posterDetails = db.get_collection("posterDetails")
 
@@ -53,6 +54,30 @@ def add_movie_poster_characteristics(imdbID: str):
         if not poster_link or poster_link == "N/A":
             print(f"Poster link not found for movie with IMDb ID {imdbID}.")
             return
+        
+        ''' just used for testing
+        poster_characteristics = {
+            "title": "sample movie 1",
+            "tagline": "this is a sample poster",
+            "colorScheme": [
+                "AA0011",
+                "BB1122",
+                "CC2233"
+            ],
+            "font": [
+                "Futura Bold",
+                "Roboto Thin",
+                "Papyrus"
+            ],
+            "atmosphere": "futuristic",
+            "imageElement": {
+                "main": "Man in a spacesuit",
+                "background": "Mars-like planet"
+            },
+            "artStyle": "Realistic phtography",
+            "periodStyle": "Modern"
+        } 
+        '''
 
         # Get poster detail using the imported custom function
         poster_characteristics = get_movie_poster_details(poster_link)
@@ -75,11 +100,11 @@ def add_movie_poster_characteristics(imdbID: str):
 # Read in the main dataframe from which we'll get the IMDB IDs
 mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
 
+
 lastIndex = 0 # Please try to update it based on the printed lastIndex before closing out
 dailyBatchSize = 1000
 
 for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
-    
     try:
         add_movie_poster_characteristics(imdbID)
     except pymongo.errors.PyMongoError as e:
@@ -88,6 +113,9 @@ for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
 
 lastIndex += dailyBatchSize
 print(lastIndex)
+
+
+# add_movie_poster_characteristics("tt01") used for testing
 
 client.close()
 print("MongoDB connection closed.")
