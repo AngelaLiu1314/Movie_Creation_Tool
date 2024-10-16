@@ -64,16 +64,16 @@ movieDetails = {
                     "primary": str,
                     "secondary": str,
                     "accent": str
-                }),
+                },
                 "font": {
                     "title_font": str,
                     "tagline_font": str,
                     "credits_font": str
-                }),
+                },
                 "image_elements": {
                     "main_character": str,
                     "background": str
-                }),
+                },
                 "atmosphere": str,
                 "iconography": str,
                 "art_style": str, (animation, landscape photography, cast portrait, etc.)
