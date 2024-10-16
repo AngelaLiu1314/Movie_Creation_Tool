@@ -32,6 +32,7 @@ def add_movie_poster_characteristics(imdbID: str):
 
     # imdb id check to avoid redundant database storing
     existingMovie = posterDetails.find_one({"imdbID": imdbID})
+    
     if existingMovie:
         print(f"Movie with imdbID {imdbID} already exists. Skipping insertion.")
         return
@@ -58,7 +59,7 @@ def add_movie_poster_characteristics(imdbID: str):
         poster_characteristics['imdbID'] = imdbID
         poster_characteristics['posterLink'] = poster_link
 
-        # Make the PATCH request to the FastAPI server
+        # Make the POST request to create a record to the FastAPI server
         response = requests.post(poster_url, json=poster_characteristics)
 
         # Check the response and handle success/failure
@@ -68,3 +69,23 @@ def add_movie_poster_characteristics(imdbID: str):
         else:
             print(f"Failed to update movie {imdbID}. Status Code: {response.status_code}")
             print(response.text)  # Print the error message from the response
+
+# Read in the main dataframe from which we'll get the IMDB IDs
+mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
+
+lastIndex = 0 # Please try to update it based on the printed lastIndex before closing out
+dailyBatchSize = 1000
+
+for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
+    
+    try:
+        add_movie_poster_characteristics(imdbID)
+    except pymongo.errors.PyMongoError as e:
+        print(f"An error occurred while adding the poster detail: {e}")
+    
+
+lastIndex += dailyBatchSize
+print(lastIndex)
+
+client.close()
+print("MongoDB connection closed.")
