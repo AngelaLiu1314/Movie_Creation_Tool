@@ -42,8 +42,6 @@ class PosterCharacteristics(BaseModel):
     posterLink: str
     title: Optional[str]
     tagline: Optional[str]
-    genre: Optional[str]
-    directorStyle: Optional[str]
     colorScheme: Optional[List[str]]
     font: Optional[List[str]]
     atmosphere: Optional[str]

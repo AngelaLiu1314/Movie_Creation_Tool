@@ -12,7 +12,7 @@ The `movieDetails` collection in the `movies` database has the following structu
 
 ```json
 {
-  "imdbID": "string",          // The unique IMDb ID for the movie.
+  "imdbID": "string",           // The unique IMDb ID for the movie.
   "title": "string",            // The movie's title.
   "rating": "string",           // The movie's rating (e.g., PG-13, R).
   "runtimeMinutes": "string",   // Runtime of the movie in minutes.
@@ -26,6 +26,26 @@ The `movieDetails` collection in the `movies` database has the following structu
 }
 ```
 Note: Additional fields like `Estimated Budget` and `Poster Key Characteristics` to be added later once we integrate OpenAI for poster generation.
+
+The `posterDetails` collection in the `movies` database has the following (tentative) structure:
+
+```json
+{
+    "imdbID": "string",         // The unique IMDb ID for the movie.
+    "posterLink": "string",     // movie's title
+    
+    // following parameters will be represented as optional
+
+    "title": "string",          // title on poster
+    "tagline": "string",        // tagline on poster
+    "colorScheme": ["string"],  // color palette in HEX Codes
+    "font": ["string"],         // name of notable fonts or font styles
+    "atmosphere": "string",     // general atmosphere of the poster
+    "imageElement": {"string": "string"},  // such as main character, background, etc.
+    "artStyle": "string",       // as in illustration, photography, digital art, etc.
+    "periodStyle": "string"     // as in time period
+}
+```
 
 ### Reason for Choosing MongoDB
 MongoDB was selected for its flexibility in handling unstructured and semi-structured data. Movie metadata can be complex and diverse, including nested objects (e.g., actors, writers) and arrays (e.g., genres), and MongoDB’s schema-less design allows for this variability without rigid table structures like SQL databases.
@@ -61,7 +81,8 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
       client = pymongo.MongoClient(mongodb_uri)
       db = client.get_database("movies")
       movieDetails = db.get_collection("movieDetails")
-      
+      posterDetails = db.get_collection("posterDetails")
+
       # Verify the connection
       client.server_info()
       print("Connected successfully to the 'Movies' database!")
@@ -72,7 +93,9 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
    ```
 
 4. **Database Design:**
-   - The database contains a `movies` database with a `movieDetails` collection, where each document represents a movie and its associated metadata such as plot, rating, genre, actors, and key characteristics for poster generation.
+   * The database contains a `movies` database with a `movieDetails` and `posterDetails` collections: 
+        * **movieDetails**: each document represents a movie and its associated metadata such as plot, rating, genre, actors, etc.
+        * **posterDetails**: each document represents a set of poster characteristics for each of movie posters linked with its respective imdb ID.
 
 5. **Populating the Database:**
    - Data insertion into the `movieDetails` collection is done either manually or through automated scripts. The system will later integrate modules for generating movie posters based on plot descriptions.

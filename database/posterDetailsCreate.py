@@ -56,8 +56,8 @@ def add_movie_poster_characteristics(imdbID: str):
         poster_characteristics = get_movie_poster_details(poster_link)
 
         # Add the IMDb ID and posterLink to the poster characteristics to match pydantic
-        poster_characteristics['imdbID'] = imdbID
-        poster_characteristics['posterLink'] = poster_link
+        poster_characteristics["imdbID"] = imdbID
+        poster_characteristics["posterLink"] = poster_link
 
         # Make the POST request to create a record to the FastAPI server
         response = requests.post(poster_url, json=poster_characteristics)
