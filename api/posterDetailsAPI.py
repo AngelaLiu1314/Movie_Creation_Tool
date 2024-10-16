@@ -74,3 +74,12 @@ def add_poster_characteristics(imdbID: str, poster_characteristics: PosterCharac
     posterDetails.insert_one(poster_data)
 
     return poster_characteristics
+
+# Delete a movie by IMDb ID
+@app.delete("/posters/{imdbID}")
+def delete_poster(imdbID: str):
+    imdbID = imdbID.strip()
+    result = posterDetails.delete_one({"imdbID": imdbID})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    return {"message": "Poster deleted successfully"}
