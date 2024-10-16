@@ -230,7 +230,7 @@ return response.json(), indexInDF
 
 1.	**Success**: If the movie’s poster characteristics are successfully added/updated, it prints a success message along with the JSON response from the FastAPI server.
 
-2.	**Failure**: If an error occurs during the request or if the posterLink or movie is not found, it prints the relevant error message and skips the insertion.
+2.	**Failure**: If an error occurs during the request or if the `posterLink` or movie is not found, it prints the relevant error message and skips the insertion.
 
 
 
