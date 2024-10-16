@@ -15,6 +15,7 @@ try:
     client = pymongo.MongoClient(mongodb_uri) # this creates a client that can connect to our DB
     db = client.get_database("movies") # this gets the database named 'Movies'
     movieDetails = db.get_collection("movieDetails")
+    posterDetails = db.get_collection("posterDetails")
 
     client.server_info() # forces client to connect to server
     print("Connected successfully to the 'Movies' database!")
