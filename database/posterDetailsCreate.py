@@ -1,3 +1,5 @@
+# DO NOT RUN UNTIL OPENAI API PROVIDED
+
 import json
 import os
 from dotenv import load_dotenv
