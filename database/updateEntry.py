@@ -26,11 +26,29 @@ except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
 
-def update_movie_poster_characteristics(imdbID: str, poster_characteristics: dict):
-    url = f"{FASTAPI_URL}/movies/{imdbID}/posterCharacteristics"
+def update_movie_poster_characteristics(imdbID: str):
+    patch_url = f"{FASTAPI_URL}/movies/{imdbID}/posterCharacteristics"
     
+    # Query MongoDB for the movie by imdbID
+    movie = movieDetails.find_one({"imdbID": imdbID})
+    
+    # Check if movie exists
+    if not movie:
+        print(f"Movie with IMDb ID {imdbID} not found in the database.")
+        return
+    
+    # Extract posterLink from the movie document
+    poster_link = movie.get('posterLink', None)
+
+    if not poster_link:
+        print(f"Poster link not found for movie with IMDb ID {imdbID}.")
+        return
+
+    # Get poster detail using the imported custom function
+    poster_characteristics = get_movie_poster_details(poster_link)
+
     # Make the PATCH request to the FastAPI server
-    response = requests.patch(url, json=poster_characteristics)
+    response = requests.patch(patch_url, json=poster_characteristics)
 
     # Check the response and handle success/failure
     if response.status_code == 200:
