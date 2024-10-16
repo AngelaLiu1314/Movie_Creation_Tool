@@ -122,7 +122,7 @@ def add_movie_details(imdbID, response, indexInDF): #defines what information we
 
 
 # Start adding movie details to the database. Max daily responses for OMDB API is 1000, so we need to use an indexing variable to avoid repetitive addition
-lastIndex = 97136 # Please try to update it based on the printed lastIndex before closing out
+lastIndex = 177136 # Please try to update it based on the printed lastIndex before closing out
 dailyBatchSize = 80000
 
 for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
