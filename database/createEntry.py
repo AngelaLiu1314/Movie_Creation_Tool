@@ -6,6 +6,7 @@ from bson.objectid import ObjectId
 import requests
 import openai
 import pandas as pd
+from posterDetailFunction import get_movie_poster_details
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
@@ -21,44 +22,6 @@ try:
 except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
-
-def get_movie_poster_details(poster_link):
-    '''
-    Input:
-    poster_link (string): A URL to a movie poster.
-
-    Processing:
-    Prompt Creation: The function builds a prompt using the poster URL to request detailed information about the poster (e.g., title, genre, color palette).
-    API Call: It sends this prompt to OpenAI’s API, which generates a response.
-    Response Parsing: The function parses the response into a Python dictionary.
-
-    Output:
-    details (dictionary/JSON): A dictionary containing key information about the movie poster (e.g., title, genre, color palette, fonts) -- subject to change
-    '''
-    prompt = f"Provide the following information about the poster {poster_link} as JSON:\n\
-    title,\n\
-    tagline,\n\
-    genre,\n\
-    director_style,\n\
-    color_palette (nested object containing HEX codes of primary, secondary, and accent colors),\n\
-    font (nested object containing title_font, tagline_font, credits_font),\n\
-    image_elements (e.g., main character, background),\n\
-    atmosphere,\n\
-    iconography,\n\
-    art_style,\n\
-    period_style.\n\
-    If any information is unavailable, use 'unknown' as the value."
-    
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        max_tokens=300
-    )
-    
-    # Parse GPT response to JSON
-    details = json.loads(response['choices'][0]['text'].strip())
-    
-    return details
 
 # Read in the main dataframe from which we'll get the IMDB IDs
 mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
