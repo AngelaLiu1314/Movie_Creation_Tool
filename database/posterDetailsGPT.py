@@ -38,7 +38,7 @@ def get_movie_poster_details(poster_link):
     try:
         details = json.loads(response['choices'][0]['text'].strip())
         
-        # Transform details into the desired format for posterCharacteristics
+        # Transform details into the desired format for posterCharacteristics. Make sure to edit this and BaseModel in apiMain.py together
         poster_characteristics = {
             "title": details.get("title", "unknown"),
             "tagline": details.get("tagline", "unknown"),
