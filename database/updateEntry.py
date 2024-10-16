@@ -6,11 +6,13 @@ from bson.objectid import ObjectId
 import requests
 import openai
 import pandas as pd
-
-from createEntry import get_movie_poster_details
+from posterDetailFunction import get_movie_poster_details
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
+
+# FastAPI server URL (modify if server is hosted elsewhere)
+FASTAPI_URL = "http://127.0.0.1:8000"
 
 try:
     client = pymongo.MongoClient(mongodb_uri) # this creates a client that can connect to our DB
@@ -24,61 +26,16 @@ except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
 
-# We need this separate file for updating the collection because the poster details will be added after the fact
-'''
-Schema Reminder:
+def update_movie_poster_characteristics(imdbID: str, poster_characteristics: dict):
+    url = f"{FASTAPI_URL}/movies/{imdbID}/posterCharacteristics"
+    
+    # Make the PATCH request to the FastAPI server
+    response = requests.patch(url, json=poster_characteristics)
 
-Database Name: movies
-Collection Name: movieDetails
-movieDetails = {
-        "imdbID": str,
-        "title": str,
-        "rating": str,
-        "runtimeMinutes": float,
-        "releaseDate": datetime,
-        "genre": [
-            str,
-            str,
-            str  
-            ],
-        "director": "Name of the Director",
-        "writers": [
-            str,
-            str,
-            str
-            ],
-        "actors": {
-            str,
-            str,
-            str
-                },
-        "plot": str,
-        "posterlink": str
-        "posterCharactertistics": not yet created --> needs to be primary purpose of this file. But might end up being a collection of their own
-            { (possible design)
-                "title": str,
-                "tagline": str,
-                "genre": str,
-                "director_style": str,
-                "color_palette": {
-                    "primary": str,
-                    "secondary": str,
-                    "accent": str
-                },
-                "font": {
-                    "title_font": str,
-                    "tagline_font": str,
-                    "credits_font": str
-                },
-                "image_elements": {
-                    "main_character": str,
-                    "background": str
-                },
-                "atmosphere": str,
-                "iconography": str,
-                "art_style": str, (animation, landscape photography, cast portrait, etc.)
-                "period_style": str 
-            }
-    }
-'''
-
+    # Check the response and handle success/failure
+    if response.status_code == 200:
+        print(f"Successfully updated movie {imdbID} poster characteristics.")
+        print(response.json())  # Print the updated movie details
+    else:
+        print(f"Failed to update movie {imdbID}. Status Code: {response.status_code}")
+        print(response.text)  # Print the error message from the response
