@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 import requests
 import openai
 import pandas as pd
-from posterDetailFunction import get_movie_poster_details
+from database.posterDetailsGPT import get_movie_poster_details
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
