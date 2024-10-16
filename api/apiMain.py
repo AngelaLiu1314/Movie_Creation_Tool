@@ -62,7 +62,6 @@ class Movie(BaseModel):
     actors: List[str]
     plot: str
     posterLink: str
-    posterCharacteristics: Optional[PosterCharacteristics] = None  # New field for poster characteristics
 
 # Get all movies
 @app.get("/movies", response_model=List[Movie])
