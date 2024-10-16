@@ -35,6 +35,19 @@ except pymongo.errors.ConnectionFailure as e:
 def read_root():
     return {"message": "Welcome to the Movies API. Visit /movies to explore the collection."}
 
+# Pydantic model for poster characteristics
+class PosterCharacteristics(BaseModel):
+    title: Optional[str]
+    tagline: Optional[str]
+    genre: Optional[str]
+    directorStyle: Optional[str]
+    colorScheme: Optional[List[str]]
+    font: Optional[List[str]]
+    atmosphere: Optional[str]
+    imageElement: Optional[Dict[str, str]]
+    artStyle: Optional[str]
+    periodStyle: Optional[str]
+
 # Pydantic model for a movie
 class Movie(BaseModel):
     imdbID: str
@@ -48,7 +61,7 @@ class Movie(BaseModel):
     actors: List[str]
     plot: str
     posterLink: str
-    posterCharacteristics: Optional[Dict[str, Union[str, int]]] = None  # New field for poster characteristics
+    posterCharacteristics: Optional[PosterCharacteristics] = None  # New field for poster characteristics
 
 # Get all movies
 @app.get("/movies", response_model=List[Movie])
@@ -88,26 +101,16 @@ def update_movie(imdbID: str, movie: Movie):
 
 # Partially update poster characteristics by IMDb ID
 @app.patch("/movies/{imdbID}/posterCharacteristics", response_model=Movie)
-def update_poster_characteristics(imdbID: str, poster_characteristics: Dict[str, Union[str, int]]):
+def update_poster_characteristics(imdbID: str, poster_characteristics: PosterCharacteristics):
     imdbID = imdbID.strip()
     updated_movie = movieDetails.find_one_and_update(
         {"imdbID": imdbID},
-        {"$set": {"posterCharacteristics": poster_characteristics}},
+        {"$set": {"posterCharacteristics": poster_characteristics.model_dump(exclude_unset=True)}},
         return_document=True
     )
     if not updated_movie:
         raise HTTPException(status_code=404, detail="Movie not found")
     return Movie(**updated_movie)
-'''
-Example call of update_poster_characteristics:
-imdbID = "tt0000001"
-poster_characteristics = {
-"colorScheme": "Dark tones",
-"mainCharacterPose": "Staring directly at the viewer",
-"textPosition": "Top-right corner"
-}
-update_poster_characteristics(imdbID, poster_characteristics)
-'''
 
 # Delete a movie by IMDb ID
 @app.delete("/movies/{imdbID}")
