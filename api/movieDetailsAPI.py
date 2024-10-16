@@ -109,30 +109,4 @@ def delete_movie(imdbID: str):
         raise HTTPException(status_code=404, detail="Movie not found")
     return {"message": "Movie deleted successfully"}
 
-# Add poster characteristics by IMDb ID
-@app.post("/posters/{imdbID}", response_model=PosterCharacteristics)
-def add_poster_characteristics(imdbID: str, poster_characteristics: PosterCharacteristics):
-    imdbID = imdbID.strip()
-
-    # Query movieDetails collection to ensure the movie exists and has a valid posterLink
-    movie = movieDetails.find_one({"imdbID": imdbID})
-
-    if not movie:
-        raise HTTPException(status_code=404, detail="Movie not found in movieDetails collection.")
-    
-    if movie.get('posterLink') == "N/A":
-        raise HTTPException(status_code=400, detail="Movie has no valid poster link (posterLink is 'N/A').")
-    
-    # Insert poster characteristics into the posterDetails collection
-    poster_data = poster_characteristics.model_dump(exclude_unset=True)
-
-    # Check if poster details already exist for this movie
-    existing_poster = posterDetails.find_one({"imdbID": imdbID})
-    if existing_poster:
-        raise HTTPException(status_code=400, detail="Poster details already exist for this IMDb ID.")
-    
-    posterDetails.insert_one(poster_data)
-
-    return poster_characteristics
-
 print(get_movie_by_imdbID("tt1517268"))
