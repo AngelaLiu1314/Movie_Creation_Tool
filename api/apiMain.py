@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from pydantic import Field
 from typing import List, Optional, Union, Dict
 import pymongo
+import certifi
 from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
@@ -18,7 +19,7 @@ app = FastAPI()
 # Fetch MongoDB URI from environment variables
 try:
     mongo_uri = os.getenv("Mongo_URI")
-    client = pymongo.MongoClient(mongo_uri)
+    client = pymongo.MongoClient(mongo_uri, tlsCAFile=certifi.where())
     db = client["movies"]
     movieDetails = db["movieDetails"]
 
