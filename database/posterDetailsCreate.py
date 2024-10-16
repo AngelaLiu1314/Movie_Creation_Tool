@@ -48,7 +48,7 @@ def add_movie_poster_characteristics(imdbID: str):
         # Extract posterLink from the movie document
         poster_link = movie.get('posterLink', None)
 
-        if not poster_link:
+        if not poster_link or poster_link == "N/A":
             print(f"Poster link not found for movie with IMDb ID {imdbID}.")
             return
 
