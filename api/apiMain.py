@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pydantic import Field
-from typing import List, Optional
+from typing import List, Optional, Union, Dict
 import pymongo
 from pymongo import MongoClient
 from bson import ObjectId
@@ -47,6 +47,7 @@ class Movie(BaseModel):
     actors: List[str]
     plot: str
     posterLink: str
+    posterCharacteristics: Optional[Dict[str, Union[str, int]]] = None  # New field for poster characteristics
 
 # Get all movies
 @app.get("/movies", response_model=List[Movie])
@@ -83,6 +84,29 @@ def update_movie(imdbID: str, movie: Movie):
     if not updated_movie:
         raise HTTPException(status_code=404, detail="Movie not found")
     return Movie(**updated_movie)
+
+# Partially update poster characteristics by IMDb ID
+@app.patch("/movies/{imdbID}/posterCharacteristics", response_model=Movie)
+def update_poster_characteristics(imdbID: str, poster_characteristics: Dict[str, Union[str, int]]):
+    imdbID = imdbID.strip()
+    updated_movie = movieDetails.find_one_and_update(
+        {"imdbID": imdbID},
+        {"$set": {"posterCharacteristics": poster_characteristics}},
+        return_document=True
+    )
+    if not updated_movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    return Movie(**updated_movie)
+'''
+Example call of update_poster_characteristics:
+imdbID = "tt0000001"
+poster_characteristics = {
+"colorScheme": "Dark tones",
+"mainCharacterPose": "Staring directly at the viewer",
+"textPosition": "Top-right corner"
+}
+update_poster_characteristics(imdbID, poster_characteristics)
+'''
 
 # Delete a movie by IMDb ID
 @app.delete("/movies/{imdbID}")
