@@ -34,10 +34,10 @@ def add_movie_poster_characteristics(imdbID: str):
     poster_url = f"{FASTAPI_URL}/posters/{imdbID}"
 
     # imdb id check to avoid redundant database storing
-    existingMovie = posterDetails.find_one({"imdbID": imdbID})
+    existingPoster = posterDetails.find_one({"imdbID": imdbID})
     
-    if existingMovie:
-        print(f"Movie with imdbID {imdbID} already exists. Skipping insertion.")
+    if existingPoster:
+        print(f"Poster with imdbID {imdbID} already exists. Skipping insertion.")
         return
     else:
         # Query MongoDB for the movie by imdbID
