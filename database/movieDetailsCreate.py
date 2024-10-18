@@ -13,7 +13,7 @@ load_dotenv()
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
 
 try:
-    client = pymongo.MongoClient(mongodb_uri)#, tlsCAFile=certifi.where()) # this creates a client that can connect to our DB
+    client = pymongo.MongoClient(mongodb_uri, tlsCAFile=certifi.where()) # this creates a client that can connect to our DB
     db = client.get_database("movies") # this gets the database named 'Movies'
     movieDetails = db.get_collection("movieDetails")
     posterDetails = db.get_collection("posterDetails")
