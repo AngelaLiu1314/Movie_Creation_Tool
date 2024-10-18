@@ -6,14 +6,14 @@ from bson.objectid import ObjectId
 import requests
 import openai
 import pandas as pd
-from database.posterDetailsGPT import get_movie_poster_details
+from posterDetailsGPT import get_movie_poster_details
 import certifi
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
 
 try:
-    client = pymongo.MongoClient(mongodb_uri, tlsCAFile=certifi.where()) # this creates a client that can connect to our DB
+    client = pymongo.MongoClient(mongodb_uri)#, tlsCAFile=certifi.where()) # this creates a client that can connect to our DB
     db = client.get_database("movies") # this gets the database named 'Movies'
     movieDetails = db.get_collection("movieDetails")
     posterDetails = db.get_collection("posterDetails")
@@ -124,7 +124,7 @@ def add_movie_details(imdbID, response, indexInDF): #defines what information we
 
 
 # Start adding movie details to the database. Max daily responses for OMDB API is 1000, so we need to use an indexing variable to avoid repetitive addition
-lastIndex = 177136 # Please try to update it based on the printed lastIndex before closing out
+lastIndex = 229178 # Please try to update it based on the printed lastIndex before closing out
 dailyBatchSize = 80000
 
 for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
