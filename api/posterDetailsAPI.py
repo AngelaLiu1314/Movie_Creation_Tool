@@ -40,6 +40,7 @@ def read_root():
 class PosterCharacteristics(BaseModel):
     imdbID: str
     posterLink: str
+    plot: str
     title: Optional[str]
     tagline: Optional[str]
     colorScheme: Optional[List[str]]

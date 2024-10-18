@@ -48,11 +48,12 @@ def add_movie_poster_characteristics(imdbID: str):
             print(f"Movie with IMDb ID {imdbID} not found in the database.")
             return
         
-        # Extract posterLink from the movie document
+        # Extract posterLink and plot from the movie document
+        plot = movie.get('plot', None)
         poster_link = movie.get('posterLink', None)
 
-        if not poster_link or poster_link == "N/A":
-            print(f"Poster link not found for movie with IMDb ID {imdbID}.")
+        if not poster_link or poster_link == "N/A" or not plot or plot == 'N/A':
+            print(f"Poster link or plot not found for movie with IMDb ID {imdbID}.")
             return
         
         ''' just used for testing
@@ -82,9 +83,10 @@ def add_movie_poster_characteristics(imdbID: str):
         # Get poster detail using the imported custom function
         poster_characteristics = get_movie_poster_details(poster_link)
 
-        # Add the IMDb ID and posterLink to the poster characteristics to match pydantic
+        # Add the IMDb ID, posterLink, and plot to the poster characteristics to match pydantic
         poster_characteristics["imdbID"] = imdbID
         poster_characteristics["posterLink"] = poster_link
+        poster_characteristics["plot"] = plot
 
         # Make the POST request to create a record to the FastAPI server
         response = requests.post(poster_url, json=poster_characteristics)
