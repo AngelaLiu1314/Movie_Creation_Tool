@@ -28,6 +28,7 @@ except pymongo.errors.ConnectionFailure as e:
 
 # Define the deletion criteria. Deletion criteria is wrapped in a dictionary.
 delete_criteria = {
+    # Condition itself mimics the mongoDB shell commands
     "$or": [
         {"plot": "N/A"},          # Condition for "plot" field having "N/A"
         {"posterLink": "N/A"}     # Condition for "posterLink" field having "N/A"
