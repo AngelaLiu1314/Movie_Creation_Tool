@@ -124,7 +124,7 @@ def add_movie_details(imdbID, response, indexInDF): #defines what information we
 
 
 # Start adding movie details to the database. Max daily responses for OMDB API is 1000, so we need to use an indexing variable to avoid repetitive addition
-lastIndex = 497020 # Please try to update it based on the printed lastIndex before closing out
+lastIndex = 513575 # Please try to update it based on the printed lastIndex before closing out
 dailyBatchSize = 20000
 
 for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
@@ -134,7 +134,10 @@ for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
         if response is None:
             print(f"No valid response for imdbID: {imdbID}. Skipping...")
             continue
-        
+        # Check to see if the plot or posterLink is missing
+        if response["plot"] == "N/A" or response["posterLink"] == "N/A":
+            print(f"plot or poster missing for imdbID: {imdbID}. Skipping...")
+            continue
         # When the OMDB API retrieves information but is "False"
         if response["Response"] == "False":
             print(f"Error fetching data for imdbID: {imdbID}. Skipping...")
