@@ -135,7 +135,7 @@ for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
             print(f"No valid response for imdbID: {imdbID}. Skipping...")
             continue
         # Check to see if the plot or posterLink is missing
-        if response["plot"] == "N/A" or response["posterLink"] == "N/A":
+        if response["Plot"] == "N/A" or response["Poster"] == "N/A":
             print(f"plot or poster missing for imdbID: {imdbID}. Skipping...")
             continue
         # When the OMDB API retrieves information but is "False"
