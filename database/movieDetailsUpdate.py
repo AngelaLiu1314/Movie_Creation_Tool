@@ -30,9 +30,9 @@ except pymongo.errors.ConnectionFailure as e:
 # Read in the main dataframe from which we'll get the IMDB IDs
 mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
 
-start_after_id = ObjectId("670c683ea0a0815d202922ee")
+start_after_id = ObjectId("670c676c660f80b2ceeec2a4")
 
-def update_documents_posterImage(batch_size = 300000, start_after_id= start_after_id):
+def update_documents_posterImage(batch_size = 100000, start_after_id= start_after_id):
     query = {"_id": {"$gt": start_after_id}}
     cursor = movieDetails.find(query).limit(batch_size)
 
@@ -55,10 +55,16 @@ def update_documents_posterImage(batch_size = 300000, start_after_id= start_afte
                     {"_id": document["_id"]},
                     {"$set": {"posterImage": img_data}}
                 )
+                
+                print(f"Processed document ID: {document["_id"]}")
+                
             except:
-                print("Couldn't get the image. Skipping...")
+                movieDetails.update_one(
+                    {"_id": document["_id"]},
+                    {"$set": {"posterImage": "N/A"}}
+                )
+                print("Couldn't get the image. Storing as N/A")
         
-        print(f"Processed document ID: {document["_id"]}")
         # update the last processed ID
         start_after_id = document["_id"]
         batch_processed = True
