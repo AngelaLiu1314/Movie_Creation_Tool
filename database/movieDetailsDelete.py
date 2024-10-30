@@ -32,7 +32,8 @@ delete_criteria = {
     "$or": [
         {"plot": "N/A"},          # Condition for "plot" field having "N/A"
         {"posterLink": "N/A"},     # Condition for "posterLink" field having "N/A"
-        {"runtimeMinutes": 0}       # Condition for "runtimeMinutes being 0"
+        {"runtimeMinutes": 0},       # Condition for "runtimeMinutes being 0"
+        {"posterImage": "N/A"}
     ]
 }
 
