@@ -8,7 +8,7 @@ from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
 import os
-from typing import Union, List
+import base64
 
 # Load environment variables from .env file
 load_dotenv()
@@ -62,7 +62,7 @@ class Movie(BaseModel):
     actors: List[str]
     plot: str
     posterLink: str
-    posterImage: bytes # into binary data
+    posterImage: Optional[bytes] = None # into binary data
 
 # Get all movies
 @app.get("/movies", response_model=List[Movie])
@@ -70,6 +70,12 @@ def get_movies():
     movies = list(movieDetails.find({}))
     if not movies:
         raise HTTPException(status_code=404, detail="No movies found")
+
+    # Convert each document's posterImage to Base64 if it exists
+    for movie in movies:
+        if "posterImage" in movie and movie["posterImage"]:
+            movie["posterImage"] = base64.b64encode(movie["posterImage"]).decode("utf-8")
+
     return [Movie(**movie) for movie in movies]
 
 # Get a movie by IMDb ID
@@ -79,6 +85,11 @@ def get_movie_by_imdbID(imdbID: str):
     movie = movieDetails.find_one({"imdbID": imdbID})
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
+
+    # Convert posterImage to Base64 if it exists
+    if "posterImage" in movie and movie["posterImage"]:
+        movie["posterImage"] = base64.b64encode(movie["posterImage"]).decode("utf-8")
+
     return Movie(**movie)
 
 # Add a new movie
@@ -110,4 +121,4 @@ def delete_movie(imdbID: str):
         raise HTTPException(status_code=404, detail="Movie not found")
     return {"message": "Movie deleted successfully"}
 
-print(get_movie_by_imdbID("tt1517268"))
+print(get_movie_by_imdbID("tt24244436"))
