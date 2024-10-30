@@ -8,6 +8,8 @@ import openai
 import pandas as pd
 from posterDetailsGPT import get_movie_poster_details
 import certifi
+from PIL import Image
+from io import BytesIO
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
@@ -28,3 +30,48 @@ except pymongo.errors.ConnectionFailure as e:
 # Read in the main dataframe from which we'll get the IMDB IDs
 mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
 
+start_after_id = ObjectId("670c683ea0a0815d202922ee")
+
+def update_documents_posterImage(batch_size = 300000, start_after_id= start_after_id):
+    query = {"_id": {"$gt": start_after_id}}
+    cursor = movieDetails.find(query).limit(batch_size)
+
+    batch_processed = False
+
+    for document in cursor:
+        poster_link = document.get("posterLink")
+
+        if poster_link and poster_link != "N/A":
+            response = requests.get(poster_link)
+            try:
+                image = Image.open(BytesIO(response.content))
+                # Converting to bytes
+                img_byte_array = BytesIO()
+                image.save(img_byte_array, format="PNG")
+                img_data = img_byte_array.getvalue()
+
+                # Updating document
+                movieDetails.update_one(
+                    {"_id": document["_id"]},
+                    {"$set": {"posterImage": img_data}}
+                )
+            except:
+                print("Couldn't get the image. Skipping...")
+        
+        print(f"Processed document ID: {document["_id"]}")
+        # update the last processed ID
+        start_after_id = document["_id"]
+        batch_processed = True
+
+    if not batch_processed:
+        print("No more documents to process.")
+    else:
+        print(f"Last processed start_after_id: {start_after_id}")
+    ''''''
+
+# run update function
+update_documents_posterImage()
+
+# Close connection once finished
+client.close()
+print("MongoDB connection closed.")
