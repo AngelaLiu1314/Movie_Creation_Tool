@@ -109,6 +109,11 @@ def update_movie(imdbID: str, movie: Movie):
     )
     if not updated_movie:
         raise HTTPException(status_code=404, detail="Movie not found")
+
+    # Convert posterImage to Base64 if it exists
+    if "posterImage" in updated_movie and updated_movie["posterImage"]:
+        updated_movie["posterImage"] = base64.b64encode(updated_movie["posterImage"]).decode("utf-8")
+
     return Movie(**updated_movie)
 
 
