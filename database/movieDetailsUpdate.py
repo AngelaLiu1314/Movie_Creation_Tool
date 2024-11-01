@@ -30,7 +30,7 @@ except pymongo.errors.ConnectionFailure as e:
 # Read in the main dataframe from which we'll get the IMDB IDs
 mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
 
-start_after_id = ObjectId("670d1a297927fee11b09f402")
+start_after_id = ObjectId("670c676c660f80b2ceeec2a4")
 
 def update_documents_posterImage(batch_size = 100000, start_after_id= start_after_id):
     query = {"_id": {"$gt": start_after_id}}
@@ -47,7 +47,7 @@ def update_documents_posterImage(batch_size = 100000, start_after_id= start_afte
                 image = Image.open(BytesIO(response.content))
                 # Converting to bytes
                 img_byte_array = BytesIO()
-                image.save(img_byte_array, format="PNG")
+                image.save(img_byte_array, format="JPEG")
                 img_data = img_byte_array.getvalue()
 
                 # Updating document

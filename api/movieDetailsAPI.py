@@ -62,7 +62,6 @@ class Movie(BaseModel):
     actors: List[str]
     plot: str
     posterLink: str
-    posterImage: Optional[bytes] = None # into binary data
 
 # Get all movies
 @app.get("/movies", response_model=List[Movie])
@@ -70,11 +69,6 @@ def get_movies():
     movies = list(movieDetails.find({}))
     if not movies:
         raise HTTPException(status_code=404, detail="No movies found")
-
-    # Convert each document's posterImage to Base64 if it exists
-    for movie in movies:
-        if "posterImage" in movie and movie["posterImage"]:
-            movie["posterImage"] = base64.b64encode(movie["posterImage"]).decode("utf-8")
 
     return [Movie(**movie) for movie in movies]
 
@@ -85,10 +79,6 @@ def get_movie_by_imdbID(imdbID: str):
     movie = movieDetails.find_one({"imdbID": imdbID})
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
-
-    # Convert posterImage to Base64 if it exists
-    if "posterImage" in movie and movie["posterImage"]:
-        movie["posterImage"] = base64.b64encode(movie["posterImage"]).decode("utf-8")
 
     return Movie(**movie)
 
@@ -110,10 +100,6 @@ def update_movie(imdbID: str, movie: Movie):
     if not updated_movie:
         raise HTTPException(status_code=404, detail="Movie not found")
 
-    # Convert posterImage to Base64 if it exists
-    if "posterImage" in updated_movie and updated_movie["posterImage"]:
-        updated_movie["posterImage"] = base64.b64encode(updated_movie["posterImage"]).decode("utf-8")
-
     return Movie(**updated_movie)
 
 
@@ -126,4 +112,4 @@ def delete_movie(imdbID: str):
         raise HTTPException(status_code=404, detail="Movie not found")
     return {"message": "Movie deleted successfully"}
 
-print(get_movie_by_imdbID("tt24244436"))
+print(get_movie_by_imdbID("tt32513166"))
