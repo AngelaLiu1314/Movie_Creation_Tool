@@ -212,10 +212,3 @@ def analyze_poster_image(imdbID: str):
         print("Error in getting the movie:", e)
         
     return poster_characteristics
-
-test_id = "tt2668120"
-poster_characteristics = analyze_poster_image(test_id)
-print(poster_characteristics)
-
-db_client.close()
-print("MongoDB connection closed.")
