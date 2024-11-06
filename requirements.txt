@@ -12,3 +12,4 @@ google-cloud-vision
 torch 
 torchvision 
 pillow
+transformers

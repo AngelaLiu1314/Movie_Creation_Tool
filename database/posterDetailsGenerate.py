@@ -12,6 +12,7 @@ from PIL import Image
 import torch
 from torchvision import transforms, models
 from torchvision.models import ResNet18_Weights
+from transformers import BlipProcessor, BlipForConditionalGeneration
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
@@ -36,20 +37,20 @@ data_transforms = transforms.Compose([
 ])
 
 # Load pretrained ResNet18 model with updated syntax
-model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
-num_features = model.fc.in_features
-model.fc = torch.nn.Sequential(
+model_analysis = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+num_features = model_analysis.fc.in_features
+model_analysis.fc = torch.nn.Sequential(
     torch.nn.Dropout(0.5),  # Dropout to match training
     torch.nn.Linear(num_features, 3)  # 3 classes: photography, illustration, 3D digital art
 )
 
 # Load model state
-model.load_state_dict(torch.load('models/best_style_classifier.pth', map_location="cpu"))
-model.eval()
+model_analysis.load_state_dict(torch.load('models/best_style_classifier.pth', map_location="cpu"))
+model_analysis.eval()
 
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
+model_analysis = model_analysis.to(device)
 
 # Define class names based on your dataset structure
 class_names = ['3d_digital_art', 'illustration', 'photography']
@@ -75,7 +76,7 @@ def classify_style(imdbID: str):
 
         # Run the model on the image
         with torch.no_grad():
-            output = model(img_tensor)
+            output = model_analysis(img_tensor)
             _, predicted = torch.max(output, 1)
             predicted_class = class_names[predicted.item()]
 
@@ -85,6 +86,30 @@ def classify_style(imdbID: str):
     except requests.exceptions.RequestException as e:
         print(f"Error downloading image: {e}")
         return None
+
+processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
+model_captioning = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
+
+def describe_image(imdbID: str):
+    # Retrieve movie poster URL from MongoDB
+    movie = movieDetails.find_one({"imdbID": imdbID})
+    poster_url = movie.get("posterLink")
+    title = movie.get("title")
+
+    if not poster_url:
+        print(f"No poster URL found for IMDb ID {imdbID}")
+        return None
+
+    raw_image = Image.open(requests.get(poster_url, stream=True).raw).convert('RGB')
+
+    # conditional image captioning
+    text = "a photography of"
+    inputs = processor(raw_image, text, return_tensors="pt")
+
+    out = model_captioning.generate(**inputs)
+    image_captions = processor.decode(out[0], skip_special_tokens=True)
+    
+    return image_captions
 
 print("GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 
@@ -102,6 +127,7 @@ def analyze_poster_image(imdbID: str):
     
     movie = movieDetails.find_one({"imdbID": imdbID})
     poster_url = movie.get("posterLink")
+    title = movie.get("title")
     
     if not poster_url:
         print(f"No poster URL found for IMDb ID {imdbID}")
@@ -113,6 +139,9 @@ def analyze_poster_image(imdbID: str):
     
     # Initialize dictionary to hold extracted poster characteristics
     poster_characteristics = {}
+    
+    poster_characteristics["movie_title"] = title
+    poster_characteristics["imdbID"] = imdbID
     
     # Identifying color scheme using top 3 color responses
     try:
@@ -128,13 +157,13 @@ def analyze_poster_image(imdbID: str):
         print("Error in color analysis:", e)
 
     # Identifying image elements using object response
-    try:
-        object_response = vision_client.object_localization(image=image)
-        print("object response received.")
-        main_elements = [obj.name for obj in object_response.localized_object_annotations]
-        poster_characteristics["mainElements"] = main_elements
-    except Exception as e:
-        print("Error in label detection:", e)
+    # try:
+    #     object_response = vision_client.object_localization(image=image)
+    #     print("object response received.")
+    #     main_elements = [obj.name for obj in object_response.localized_object_annotations]
+    #     poster_characteristics["mainElements"] = main_elements
+    # except Exception as e:
+    #     print("Error in label detection:", e)
     
     # Run label detection
     try:
@@ -144,6 +173,14 @@ def analyze_poster_image(imdbID: str):
         poster_characteristics["Labels"] = labels
     except Exception as e:
         print("Error in web labeling")
+        
+    # Store general description of the poster image using the transformers image to text annotator function
+    try:
+        description = describe_image(imdbID)
+        print("Description generated")
+        poster_characteristics["General Description"] = description
+    except Exception as e:
+        print("Error in generating image description")
     
     # Identifying taglines using text_response    
     try:
