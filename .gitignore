@@ -5,3 +5,4 @@ __pycache__/
 .vscode/
 ignoredFiles
 google-cloud-sdk
+client_file_poster_stormer.json
