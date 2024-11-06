@@ -1,122 +1,89 @@
 import json
 import os
+from io import BytesIO
+import requests
+from PIL import Image
+import torch
+from torchvision import transforms, models
 from dotenv import load_dotenv
 import pymongo
-from bson.objectid import ObjectId
-import requests
-import openai
-import pandas as pd
-from database.posterDetailsGenerate import get_movie_poster_details, analyze_poster_image
-from google.cloud import vision
 import certifi
+from torchvision.models import ResNet18_Weights
 
-load_dotenv() 
-mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
+# Load environment variables
+load_dotenv()
+mongodb_uri = os.getenv('Mongo_URI')
 
-# FastAPI server URL (modify if server is hosted elsewhere)
-FASTAPI_URL = "http://127.0.0.1:8000"
-
+# MongoDB connection setup
 try:
-    client = pymongo.MongoClient(mongodb_uri,tlsCAFile=certifi.where()) # this creates a client that can connect to our DB
-    db = client.get_database("movies") # this gets the database named 'movies'
+    client = pymongo.MongoClient(mongodb_uri, tlsCAFile=certifi.where())
+    db = client.get_database("movies")
     movieDetails = db.get_collection("movieDetails")
     posterDetails = db.get_collection("posterDetails")
-
-    client.server_info() # forces client to connect to server
     print("Connected successfully to the 'Movies' database!")
-
 except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
 
-def add_movie_poster_characteristics(imdbID: str):
-    poster_url = f"{FASTAPI_URL}/posters/{imdbID}"
+# Define image transformations to match training
+data_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
 
-    # imdb id check to avoid redundant database storing
-    existingPoster = posterDetails.find_one({"imdbID": imdbID})
-    
-    if existingPoster:
-        print(f"Poster with imdbID {imdbID} already exists. Skipping insertion.")
-        return
-    else:
-        # Query MongoDB for the movie by imdbID
-        movie = movieDetails.find_one({"imdbID": imdbID})
-        
-        # Check if movie exists
-        if not movie:
-            print(f"Movie with IMDb ID {imdbID} not found in the database.")
-            return
-        
-        # Extract posterLink and plot from the movie document
-        plot = movie.get('plot', None)
-        poster_link = movie.get('posterLink', None)
+# Load pretrained ResNet18 model with updated syntax
+model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+num_features = model.fc.in_features
+model.fc = torch.nn.Sequential(
+    torch.nn.Dropout(0.5),  # Dropout to match training
+    torch.nn.Linear(num_features, 3)  # 3 classes: photography, illustration, 3D digital art
+)
 
-        if not poster_link or poster_link == "N/A" or not plot or plot == 'N/A':
-            print(f"Poster link or plot not found for movie with IMDb ID {imdbID}.")
-            return
-        
-        ''' just used for testing
-        poster_characteristics = {
-            "title": "sample movie 1",
-            "tagline": "this is a sample poster",
-            "colorScheme": [
-                "AA0011",
-                "BB1122",
-                "CC2233"
-            ],
-            "font": [
-                "Futura Bold",
-                "Roboto Thin",
-                "Papyrus"
-            ],
-            "atmosphere": "futuristic",
-            "imageElement": {
-                "main": "Man in a spacesuit",
-                "background": "Mars-like planet"
-            },
-            "artStyle": "Realistic phtography",
-            "periodStyle": "Modern"
-        } 
-        '''
+# Load model state
+model.load_state_dict(torch.load('models/best_style_classifier.pth', map_location="cpu"))
+model.eval()
 
-        # Get poster detail using the imported custom function
-        poster_characteristics = get_movie_poster_details(poster_link)
+# Device configuration
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
 
-        # Add the IMDb ID, posterLink, and plot to the poster characteristics to match pydantic
-        poster_characteristics["imdbID"] = imdbID
-        poster_characteristics["posterLink"] = poster_link
-        poster_characteristics["plot"] = plot
+# Define class names based on your dataset structure
+class_names = ['3d_digital_art', 'illustration', 'photography']
 
-        # Make the POST request to create a record to the FastAPI server
-        response = requests.post(poster_url, json=poster_characteristics)
+def classify_style(imdbID: str):
+    # Retrieve movie poster URL from MongoDB
+    movie = movieDetails.find_one({"imdbID": imdbID})
+    poster_url = movie.get("posterLink")
+    title = movie.get("title")
 
-        # Check the response and handle success/failure
-        if response.status_code == 200:
-            print(f"Successfully updated movie {imdbID} poster characteristics.")
-            print(response.json())  # Print the updated movie details
-        else:
-            print(f"Failed to update movie {imdbID}. Status Code: {response.status_code}")
-            print(response.text)  # Print the error message from the response
+    if not poster_url:
+        print(f"No poster URL found for IMDb ID {imdbID}")
+        return None
 
-# Read in the main dataframe from which we'll get the IMDB IDs
-mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
-
-
-lastIndex = 0 # Please try to update it based on the printed lastIndex before closing out
-dailyBatchSize = 1000
-
-for imdbID in mainDF.imdb_id[lastIndex:lastIndex + dailyBatchSize]:
     try:
-        add_movie_poster_characteristics(imdbID)
-    except pymongo.errors.PyMongoError as e:
-        print(f"An error occurred while adding the poster detail: {e}")
-    
+        # Download the poster image temporarily
+        response = requests.get(poster_url)
+        response.raise_for_status()
+        img = Image.open(BytesIO(response.content))
 
-lastIndex += dailyBatchSize
-print(lastIndex)
+        # Apply the transformations
+        img_tensor = data_transforms(img).unsqueeze(0).to(device)
 
+        # Run the model on the image
+        with torch.no_grad():
+            output = model(img_tensor)
+            _, predicted = torch.max(output, 1)
+            predicted_class = class_names[predicted.item()]
 
-# add_movie_poster_characteristics("tt01") used for testing
+        print(f"Predicted art style for the poster for {imdbID}, {title}: {predicted_class}")
+        return predicted_class
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading image: {e}")
+        return None
+
+# Example usage
+style = classify_style("tt0034492")
 
 client.close()
 print("MongoDB connection closed.")
