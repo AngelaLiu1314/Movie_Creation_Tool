@@ -3,75 +3,28 @@ from dotenv import load_dotenv
 import openai
 import json
 from google.cloud import vision
+import pymongo
+import certifi
+from datetime import datetime
 
-def get_movie_poster_details(poster_link):
-    '''
-    Input:
-    poster_link (string): A URL to a movie poster.
+load_dotenv() 
+mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
 
-    Processing:
-    The function builds a prompt using the poster URL to request detailed information about the poster.
-    It sends the prompt to OpenAI’s API, which generates a response.
-    The function parses the response into a Python dictionary.
+try:
+    client = pymongo.MongoClient(mongodb_uri, tlsCAFile=certifi.where()) # this creates a client that can connect to our DB
+    db = client.get_database("movies") # this gets the database named 'Movies'
+    movieDetails = db.get_collection("movieDetails")
+    posterDetails = db.get_collection("posterDetails")
 
-    Output:
-    A dictionary containing key information about the movie poster in the desired format.
-    '''
-    
-    # Define the prompt for the API call
-    prompt = f"Analyze the movie poster at {poster_link} and provide the following information in a JSON format:\n\
-    title,\n\
-    tagline,\n\
-    color_palette (dictionary/JSON object containing primary, secondary, and accent HEX color codes),\n\
-    font (dictionary/ JSON object containing title_font, tagline_font, and credits_font),\n\
-    image_elements (describe the main character and background elements),\n\
-    atmosphere,\n\
-    art_style,\n\
-    period_style.\n\
-    If any information is unavailable, return 'unknown' for that field."
+    client.server_info() # forces client to connect to server
+    print("Connected successfully to the 'Movies' database!")
 
-    # Call OpenAI API
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        max_tokens=300
-    )
-    
-    # Parse GPT response to JSON
-    try:
-        details = json.loads(response['choices'][0]['text'].strip())
-        
-        # Transform details into the desired format for posterCharacteristics. Make sure to edit this and BaseModel in apiMain.py together
-        poster_characteristics = {
-            "title": details.get("title", "unknown"),
-            "tagline": details.get("tagline", "unknown"),
-            "colorScheme": [
-                details.get("color_palette", {}).get("primary", "unknown"),
-                details.get("color_palette", {}).get("secondary", "unknown"),
-                details.get("color_palette", {}).get("accent", "unknown")
-            ],
-            "font": [
-                details.get("font", {}).get("title_font", "unknown"),
-                details.get("font", {}).get("tagline_font", "unknown"),
-                details.get("font", {}).get("credits_font", "unknown")
-            ],
-            "atmosphere": details.get("atmosphere", "unknown"),
-            "imageElement": {
-                "main": details.get("image_elements", {}).get("main_character", "unknown"),
-                "background": details.get("image_elements", {}).get("background", "unknown")
-            },
-            "artStyle": details.get("art_style", "unknown"),
-            "periodStyle": details.get("period_style", "unknown")
-        }
-        
-        return poster_characteristics
-    
-    except (json.JSONDecodeError, KeyError) as e:
-        print(f"Error parsing the API response: {e}")
-        return {}
+except pymongo.errors.ConnectionFailure as e:
+    print(f"Could not connect to MongoDB: {e}")
+    exit(1)
 
-load_dotenv()
 print("GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+
 try:
     client = vision.ImageAnnotatorClient()
     print("Client initialized successfully.")
@@ -91,6 +44,7 @@ def analyze_poster_image(poster_link):
     # Initialize dictionary to hold extracted poster characteristics
     poster_characteristics = {}
     
+    # Identifying color scheme using color response
     try:
         color_response = vision_client.image_properties(image=image)
         print("Color response received:", color_response)
@@ -103,14 +57,23 @@ def analyze_poster_image(poster_link):
     except Exception as e:
         print("Error in color analysis:", e)
 
+    # Identifying image elements using object response
+    # try:
+    #     object_response = vision_client.object_localization(image=image)
+    #     main_elements = [obj.name for obj in object_response.localized_object_annotations]
+    #     poster_characteristics["mainElements"] = main_elements
+    # except Exception as e:
+    #     print("Error in label detection:", e)
+    
+    # Run label detection
     try:
         label_response = vision_client.label_detection(image=image)
-        print("Label response received:", label_response)
-        image_elements = [label.description for label in label_response.label_annotations]
-        poster_characteristics["imageElement"] = {"elements": image_elements}
+        labels = [label.description for label in label_response.label_annotations]
+        poster_characteristics["Labels"] = labels
     except Exception as e:
-        print("Error in label detection:", e)
-
+        print("Error in web labeling")
+    
+    # Identifying taglines using text_response    
     try:
         text_response = vision_client.text_detection(image=image)
         print("Text response received:", text_response)
@@ -119,7 +82,20 @@ def analyze_poster_image(poster_link):
     except Exception as e:
         print("Error in text detection:", e)
 
+    # Getting the decade of the movie
+    try:
+        movie = movieDetails.find_one({"posterLink": poster_link})
+        if movie:
+            release_date = movie["releaseDate"]
+            date_obj = datetime.strptime(release_date, "%Y-%m-%d")
+            release_year = str(date_obj.year)
+            release_decade = release_year[0:3] + "0"
+            poster_characteristics["decade"] = release_decade
+    except Exception as e:
+        print("Error in getting the movie:", e)
+        
     return poster_characteristics
 
-poster_characteristics = analyze_poster_image("https://m.media-amazon.com/images/M/MV5BNDk3MDFlYjgtMWQ3Mi00ODgxLWE4NDEtNzA0YjM2NzNhZGM4XkEyXkFqcGdeQXVyMTYyMDQ1OTAz._V1_SX300.jpg")
+test_link = "https://m.media-amazon.com/images/M/MV5BNzY0ZTlhYzgtOTgzZC00ZTg2LTk4NTEtZDllM2E2NGE5Njg2XkEyXkFqcGc@._V1_SX300.jpg"
+poster_characteristics = analyze_poster_image(test_link)
 print(poster_characteristics)

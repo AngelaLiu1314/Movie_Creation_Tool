@@ -6,7 +6,6 @@ from bson.objectid import ObjectId
 import requests
 import openai
 import pandas as pd
-from posterDetailsGPT import get_movie_poster_details
 import certifi
 from PIL import Image
 from io import BytesIO

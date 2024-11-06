@@ -9,3 +9,6 @@ fastapi
 uvicorn
 pydantic
 google-cloud-vision
+torch 
+torchvision 
+pillow
