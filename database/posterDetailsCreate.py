@@ -1,5 +1,3 @@
-# DO NOT RUN UNTIL OPENAI API PROVIDED
-
 import json
 import os
 from dotenv import load_dotenv
@@ -8,7 +6,8 @@ from bson.objectid import ObjectId
 import requests
 import openai
 import pandas as pd
-from posterDetailsGPT import get_movie_poster_details
+from database.posterDetailsGenerate import get_movie_poster_details, analyze_poster_image
+from google.cloud import vision
 import certifi
 
 load_dotenv() 

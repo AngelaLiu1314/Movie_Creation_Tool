@@ -39,16 +39,10 @@ def read_root():
 # Pydantic model for poster characteristics
 class PosterCharacteristics(BaseModel):
     imdbID: str
-    posterLink: str
-    plot: str
-    title: Optional[str]
-    tagline: Optional[str]
-    colorScheme: Optional[List[str]]
-    font: Optional[List[str]]
-    atmosphere: Optional[str]
-    imageElement: Optional[Dict[str, str]]
-    artStyle: Optional[str]
-    periodStyle: Optional[str]
+    title: str
+    tagline: Optional[str]  # First detected text or tagline
+    colorScheme: Optional[List[str]]  # List of dominant colors in HEX
+    imageElement: Optional[Dict[str, List[str]]]  # Dictionary with list of main elements
 
 # Add poster characteristics by IMDb ID
 @app.post("/posters/{imdbID}", response_model=PosterCharacteristics)
@@ -69,8 +63,10 @@ def add_poster_characteristics(imdbID: str, poster_characteristics: PosterCharac
 
     # Check if poster details already exist for this movie
     existing_poster = posterDetails.find_one({"imdbID": imdbID})
+
     if existing_poster:
         raise HTTPException(status_code=400, detail="Poster details already exist for this IMDb ID.")
+        return
     
     posterDetails.insert_one(poster_data)
 

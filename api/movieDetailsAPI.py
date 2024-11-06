@@ -62,7 +62,7 @@ class Movie(BaseModel):
     actors: List[str]
     plot: str
     posterLink: str
-    posterImage: bytes # into binary data
+    keywords: Optional[List[str]]
 
 # Get all movies
 @app.get("/movies", response_model=List[Movie])
