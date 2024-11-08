@@ -59,7 +59,7 @@ def process_movie_details(movie):
         "title": movie["title"],
         "imdbID": imdb_id,
         "embedding": embedding,
-        "genres": movie["genres"]
+        "genres": movie["genre"]
     })
     
     print(f"Stored embedding for {movie['title']} ({imdb_id})")
@@ -94,5 +94,5 @@ print("FAISS index created successfully!")
 
 # Close connection once finished
 db_client.close()
-print("MongoDB connection closeddd.")
+print("MongoDB connection closed.")
 
