@@ -401,6 +401,7 @@ This API enables users to manage movie details via a RESTful interface. You can 
 </details>
 
 ## Similarity Scoring via Embeddings and FAISS Indexing
+<details>
 
 To optimize our similarity search for movie plot descriptions, we use a combination of embeddings and FAISS indexing. This method enables us to retrieve the most similar movies for a given plot synopsis in a computationally efficient way, even with a large dataset. Here’s an overview of how it works:
 
@@ -432,3 +433,4 @@ By using embeddings and FAISS indexing, we achieve the following benefits:
 	•	Modular Design: Our setup separates the embedding generation, storage, and retrieval processes, making each step easy to update independently.
 
 This approach balances accuracy and efficiency, allowing our backend to handle complex similarity queries without taxing system resources. For further customization, we can tune FAISS indexing parameters, embedding models, and similarity metrics.
+</details>
