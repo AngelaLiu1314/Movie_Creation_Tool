@@ -79,7 +79,7 @@ def update_documents_posterImage(batch_size = 100000, start_after_id= start_afte
 
 def update_documents_trainingPrompt(start_after_id = start_after_id):
     query = {"_id": {"$gt": ObjectId(start_after_id)}}
-    cursor = movieDetails.find(query).sort("_id", 1).limit(10000)
+    cursor = movieDetails.find(query).sort("_id", 1).limit(290000)
     
     last_processed_id = None
     
@@ -134,7 +134,7 @@ def update_documents_trainingPrompt(start_after_id = start_after_id):
 # uncomment the update function you want to run
 # update_documents_posterImage()
 
-start_after_id = "670d426128ad7f7da577c9cd"
+start_after_id = "670d7a182e19c5e41e9e073b"
 update_documents_trainingPrompt(start_after_id)
 
 # Close connection once finished
