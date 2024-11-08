@@ -21,10 +21,12 @@ try:
     db_client = pymongo.MongoClient(mongodb_uri, tlsCAFile=certifi.where()) # this creates a client that can connect to our DB
     db = db_client.get_database("movies") # this gets the database named 'Movies'
     movieDetails = db.get_collection("movieDetails")
-    posterDetails = db.get_collection("posterDetails")
 
     db_client.server_info() # forces client to connect to server
     print("Connected successfully to the 'Movies' database!")
+    
+    posterDetails = db.get_collection("posterDetails")
+    print("Connected successfully to the 'Posters' database!")
 
 except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
@@ -91,6 +93,10 @@ processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-larg
 model_captioning = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
 
 def describe_image(imdbID: str):
+    '''
+    get the image from imdbID, generate the description of the image, and extract keywords from the image
+    '''
+    
     # Retrieve movie poster URL from MongoDB
     movie = movieDetails.find_one({"imdbID": imdbID})
     poster_url = movie.get("posterLink")

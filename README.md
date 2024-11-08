@@ -1,4 +1,4 @@
-# posterizer(.ai?)
+# Backend Development for Poster Stormer
 
 ## Database
 <details>

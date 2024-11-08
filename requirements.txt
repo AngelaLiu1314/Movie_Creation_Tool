@@ -13,3 +13,5 @@ torch
 torchvision 
 pillow
 transformers
+faiss-cpu 
+sentence-transformers
