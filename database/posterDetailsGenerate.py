@@ -55,7 +55,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_analysis = model_analysis.to(device)
 
 # Define class names based on your dataset structure
-class_names = ['3d_digital_art', 'illustration', 'photography']
+class_names = ['3d_digital_art', 'illustration', 'realistic_photography']
 
 def classify_style(imdbID: str):
     # Retrieve movie poster URL from MongoDB
