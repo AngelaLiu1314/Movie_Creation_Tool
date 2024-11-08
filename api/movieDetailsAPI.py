@@ -114,3 +114,7 @@ def delete_movie(imdbID: str):
     return {"message": "Movie deleted successfully"}
 
 print(get_movie_by_imdbID("tt32513166"))
+
+'''
+You fire it up by running uvicorn api.movieDetailsAPI:app --reload
+'''
