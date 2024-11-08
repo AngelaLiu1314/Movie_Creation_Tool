@@ -5,8 +5,4 @@ __pycache__/
 .vscode/
 ignoredFiles
 google-cloud-sdk
-<<<<<<< Updated upstream
 client_file_poster_stormer.json
-=======
-client_file_poster_stormer.json
->>>>>>> Stashed changes
