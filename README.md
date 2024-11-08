@@ -1,7 +1,6 @@
 # Backend Development for Poster Stormer
 
 ## Database
-<details>
 <summary>Expand for Database Information</summary>
 ––––––––––––––––––––––––––––
 
@@ -120,10 +119,8 @@ Additionally, MongoDB allows for rapid iteration and evolution of the data model
 - Insert Movie Metadata: This script allows for the insertion of movie metadata into the `movieDetails` collection. 
 - Fetch from OMDB API: The OMDB API is used to fetch movie data based on IMDb IDs, and the results are processed and stored in MongoDB.  
 - Custom Poster Generation (Coming Soon): The next phase will involve integrating OpenAI to generate key characteristics for movie posters based on the movie plot.
-</details>
 
 ## API
-<details>
 <summary>Expand for API Information</summary>
 ––––––––––––––––––––––––––––
 
@@ -392,16 +389,10 @@ pm.test("imdbID has been set in the environment", function () {
 }
 ```
 
----
 
-## Conclusion
 
-This API enables users to manage movie details via a RESTful interface. You can use tools like Postman to interact with it, or integrate it into a larger system that requires movie management functionality.
-
-</details>
 
 ## Similarity Scoring via Embeddings and FAISS Indexing
-<details>
 
 To optimize our similarity search for movie plot descriptions, we use a combination of embeddings and FAISS indexing. This method enables us to retrieve the most similar movies for a given plot synopsis in a computationally efficient way, even with a large dataset. Here’s an overview of how it works:
 
@@ -413,24 +404,22 @@ Each movie plot in our movieDetails collection is converted into a fixed-length 
 
 Embeddings are stored in a dedicated movieEmbeddings collection alongside key movie metadata (e.g., title, IMDb ID, genres). During the embedding process:
 
-	•	We first check if an embedding already exists for each movie to avoid recomputation and redundant storage.
-	•	Only new or updated plots are embedded and added to the collection, ensuring up-to-date and minimal storage requirements.
+* We first check if an embedding already exists for each movie to avoid recomputation and redundant storage.
+* Only new or updated plots are embedded and added to the collection, ensuring up-to-date and minimal storage requirements.
 
 ### 3. Efficient Similarity Search with FAISS Indexing
 
 The FAISS (Facebook AI Similarity Search) library allows us to perform similarity searches on large datasets with high efficiency. Here’s how we use FAISS:
 
-	•	Index Creation: We load all existing embeddings from movieEmbeddings and add them to a FAISS index. This index enables rapid nearest-neighbor searches based on vector similarity.
-	•	Index Update: As new embeddings are generated (e.g., for new movies), we update the FAISS index to reflect the latest data. This keeps the search results accurate while minimizing the need for full index rebuilds.
-	•	Similarity Calculation: When a user submits a plot synopsis, we generate an embedding for the input and query the FAISS index for the closest matches. This approach allows us to retrieve the top-n most similar movies efficiently, based on vector distance rather than costly full-dataset comparisons.
+*	Index Creation: We load all existing embeddings from movieEmbeddings and add them to a FAISS index. This index enables rapid nearest-neighbor searches based on vector similarity.
+*	Index Update: As new embeddings are generated (e.g., for new movies), we update the FAISS index to reflect the latest data. This keeps the search results accurate while minimizing the need for full index rebuilds.
+*	Similarity Calculation: When a user submits a plot synopsis, we generate an embedding for the input and query the FAISS index for the closest matches. This approach allows us to retrieve the top-n most similar movies efficiently, based on vector distance rather than costly full-dataset comparisons.
 
 ### 4. Advantages of Our Approach
 
 By using embeddings and FAISS indexing, we achieve the following benefits:
-
-	•	Reduced Computational Load: Vector-based similarity comparisons in FAISS are significantly faster than traditional text-based search methods, particularly for large datasets.
-	•	Scalability: FAISS indexing scales well, allowing us to handle hundreds of thousands of movie embeddings while maintaining quick query times.
-	•	Modular Design: Our setup separates the embedding generation, storage, and retrieval processes, making each step easy to update independently.
+*	Reduced Computational Load: Vector-based similarity comparisons in FAISS are significantly faster than traditional text-based search methods, particularly for large datasets.
+*	Scalability: FAISS indexing scales well, allowing us to handle hundreds of thousands of movie embeddings while maintaining quick query times.
+*	Modular Design: Our setup separates the embedding generation, storage, and retrieval processes, making each step easy to update independently.
 
 This approach balances accuracy and efficiency, allowing our backend to handle complex similarity queries without taxing system resources. For further customization, we can tune FAISS indexing parameters, embedding models, and similarity metrics.
-</details>
