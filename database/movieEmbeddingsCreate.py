@@ -94,5 +94,5 @@ print("FAISS index created successfully!")
 
 # Close connection once finished
 db_client.close()
-print("MongoDB connection closed.")
+print("MongoDB connection closeddd.")
 
