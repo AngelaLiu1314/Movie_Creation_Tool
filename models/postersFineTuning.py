@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from torch.utils.data import Dataset, DataLoader
 from diffusers import StableDiffusionPipeline, StableDiffusionTrainer
 from transformers import AutoTokenizer
-import torch
 import certifi
 from tqdm import tqdm
 
