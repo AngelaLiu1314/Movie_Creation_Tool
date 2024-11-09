@@ -10,6 +10,7 @@ import certifi
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
+import traceback
 
 # DB Connection
 
@@ -82,7 +83,7 @@ def build_faiss_index(embeddings):
 
 # Main Code Block with iterative feature and FAISS index setup
 # Set up starting point
-start_id = "670e9211aebecc45f740e177"
+start_id = "670ed4a92ecae2780899af97"
 query_filter = {"_id": {"$gte": ObjectId(start_id)}}
 
 for movie in movieDetails.find(query_filter).sort("_id", 1):

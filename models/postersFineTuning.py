@@ -62,22 +62,66 @@ class PosterDataset(Dataset):
             "input_ids": inputs["input_ids"].squeeze(0)
         }
 
-# Function to load a batch of documents with training prompts
-def load_batch(batch_size, start_after_id=None):
+# Function to load a batch with at least one movie per director, adding additional movies until batch size is met
+def load_batch(max_batch_size):
     """
-    Loads a batch of documents from MongoDB with existing 'trainingPrompt' and 'posterLink'.
+    Loads a batch of documents with at least one movie per director, adding additional
+    movies from directors with multiple records until reaching the specified batch size.
     """
-    query = {"trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}
-    if start_after_id:
-        query["_id"] = {"$gt": start_after_id}
+    # Initialize batch and a tracker for each director's processed count
+    batch = []
+    director_movie_counts = {}
+    
+    # Find all unique directors with a movie that has 'trainingPrompt' and 'posterLink'
+    pipeline = [
+        {"$match": {"trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}},
+        {"$group": {"_id": "$director"}}
+    ]
+    directors = movieDetails.aggregate(pipeline)
+    director_list = [director["_id"] for director in directors]
+    
+    # Ensure at least one movie per director in the batch
+    for director in director_list:
+        # Fetch all movies for the current director, sorted by `_id` to ensure consistent ordering
+        cursor = movieDetails.find(
+            {"director": director, "trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}
+        ).sort("_id", 1)
+        
+        movies = list(cursor)
+        
+        # Add the first movie for each director to the batch
+        if movies:
+            batch.append(movies[0])
+            director_movie_counts[director] = 1  # Track how many movies have been added for this director
+    
+    # Add additional movies from directors until batch size is reached
+    batch_size = len(batch)
+    while batch_size < max_batch_size:
+        added_any = False  # Track if we add any movie in this loop
 
-    cursor = movieDetails.find(query).sort("_id", 1).limit(batch_size)
-    documents = list(cursor)
-    if documents:
-        print(f"Loaded {len(documents)} documents for training.")
-        return documents
-    else:
-        return None
+        # Try to add one more movie per director where possible
+        for director in director_list:
+            current_count = director_movie_counts.get(director, 0)
+            cursor = movieDetails.find(
+                {"director": director, "trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}
+            ).sort("_id", 1).skip(current_count).limit(1)  # Skip already added movies for this director
+
+            additional_movies = list(cursor)
+            if additional_movies:
+                batch.append(additional_movies[0])
+                director_movie_counts[director] = current_count + 1
+                batch_size += 1
+                added_any = True  # Movie was added
+
+                if batch_size >= max_batch_size:
+                    break  # Exit if batch size is reached
+
+        # If we could not add any new movie in this pass, stop to avoid infinite loop
+        if not added_any:
+            break
+
+    print(f"Loaded {len(batch)} documents for training.")
+    return batch if batch else None
 
 # Fine-tuning function for a single batch
 def train_on_batch(documents):
@@ -105,16 +149,16 @@ def train_on_batch(documents):
     print("Batch training complete.")
 
 # Main function for batch training
-def batch_training(batch_size=1000):
+def batch_training(max_batch_size=1000):
     """
     Main loop for batch training, iterating through documents in batches.
     """
-    start_after_id = None
+    print(f"Starting batch training with max batch size: {max_batch_size}")
 
     # Loop until there are no more documents left to train on
     while True:
-        # Load a batch of documents
-        documents = load_batch(batch_size, start_after_id)
+        # Load a batch of documents with the specified constraints
+        documents = load_batch(max_batch_size)
         if not documents:
             print("No more documents left to train on.")
             break
@@ -122,11 +166,8 @@ def batch_training(batch_size=1000):
         # Train on the current batch
         train_on_batch(documents)
 
-        # Update starting point for the next batch
-        start_after_id = documents[-1]["_id"]
-
 # Run the batch training process
-batch_training(batch_size=1000)
+batch_training(max_batch_size=1000)
 
 # Close MongoDB connection
 client.close()
