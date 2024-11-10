@@ -110,3 +110,20 @@ async def find_similar_movies(query: MovieQuery):
     
     return {"imdbIDs": top_n_ids, "movieTitles": movie_titles, "prompt": prompt}
     
+@app.get("/get_available_genres")
+async def get_available_genres():
+    '''This function will get all the values of unique genre values that can be found under the genres field and return them in a list'''
+    
+    # Initialize an empty set to collect unique genres
+    unique_genres = set()
+    
+    # Query the movieEmbeddings collection to retrieve all genres
+    cursor = movieEmbeddings.find({}, {"genres": 1})  # Only fetch the 'genres' field
+
+    # Iterate over each document to add genres to the set
+    for document in cursor:
+        genres = document.get("genres", [])
+        unique_genres.update(genres)  # Add each genre to the set
+
+    # Convert the set to a sorted list and return it
+    return sorted(unique_genres)
