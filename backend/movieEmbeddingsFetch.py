@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import uvicorn
 import os
 import faiss
 import numpy as np
@@ -9,7 +10,6 @@ from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 from typing import List, Optional
 import certifi
-from database.movieEmbeddingsCreate import load_embeddings, build_faiss_index
 
 load_dotenv() 
 app = FastAPI()
@@ -33,6 +33,22 @@ except pymongo.errors.ConnectionFailure as e:
     exit(1)
 
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Function to load embeddings from MongoDB
+def load_embeddings():
+    embeddings = []
+    imdb_ids = []
+    for entry in movieEmbeddings.find():
+        embeddings.append(entry["embedding"])
+        imdb_ids.append(entry["imdbID"])
+    return np.array(embeddings).astype("float32"), imdb_ids
+
+# Function to build FAISS index
+def build_faiss_index(embeddings):
+    d = embeddings.shape[1]
+    index = faiss.IndexFlatL2(d)
+    index.add(embeddings)
+    return index
 
 # Request body for plot and genre input
 class MovieQuery(BaseModel):
