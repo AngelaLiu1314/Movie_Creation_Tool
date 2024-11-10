@@ -63,7 +63,7 @@ def process_movie_details(movie):
         "genres": movie["genre"]
     })
     
-    print(f"Stored embedding for {movie['title']} ({imdb_id})")
+    print(f"Stored embedding for {movie['title']}, {imdb_id=:}, {movie['_id']=:}")
 
 # Function to load embeddings from MongoDB and return them with corresponding imdbIDs
 def load_embeddings():
@@ -83,15 +83,21 @@ def build_faiss_index(embeddings):
 
 # Main Code Block with iterative feature and FAISS index setup
 # Set up starting point
-start_id = "670fb0612ecae278089a27a6"
+start_id = "670fc7302ecae278089a6e20"
+batch_size = 1000
 query_filter = {"_id": {"$gte": ObjectId(start_id)}}
+cursor = movieDetails.find(query_filter).sort("_id", 1)
 
-for movie in movieDetails.find(query_filter).sort("_id", 1):
-    try:
-        process_movie_details(movie)
-    except Exception as e:
-        print("Error in processing the movie")
-        continue
+while True:
+    batch = list(cursor.limit(batch_size))
+    if not batch:
+        break  # No more documents to process
+    for movie in batch:
+        try:
+            process_movie_details(movie)
+        except Exception as e:
+            print("Error in processing the movie")
+            continue
 
 # embeddings, imdb_ids = load_embeddings()
 # faiss_map = build_faiss_index(embeddings)
