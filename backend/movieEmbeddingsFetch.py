@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 import uvicorn
 import os
 import faiss
@@ -34,15 +33,6 @@ except pymongo.errors.ConnectionFailure as e:
 
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Function to load embeddings from MongoDB
-def load_embeddings():
-    embeddings = []
-    imdb_ids = []
-    for entry in movieEmbeddings.find():
-        embeddings.append(entry["embedding"])
-        imdb_ids.append(entry["imdbID"])
-    return np.array(embeddings).astype("float32"), imdb_ids
-
 # Function to build FAISS index
 def build_faiss_index(embeddings):
     d = embeddings.shape[1]
@@ -54,21 +44,6 @@ def build_faiss_index(embeddings):
 class MovieQuery(BaseModel):
     plot: str
     genre: Optional[str] = None
-    
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Load embeddings and initialize FAISS at startup
-    global faiss_index, imdb_ids
-    embeddings, imdb_ids = load_embeddings()
-    faiss_index = build_faiss_index(embeddings)
-
-    yield
-
-    # Close MongoDB connection on shutdown
-    db_client.close()
-    print("MongoDB connection closed.")
-
-app.router.lifespan_context = lifespan
 
 # Endpoint to find similar movies
 @app.post("/find_similar_movies")
