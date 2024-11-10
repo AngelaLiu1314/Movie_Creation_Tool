@@ -46,7 +46,7 @@ class MovieQuery(BaseModel):
     genre: Optional[str] = None
 
 # Endpoint to find similar movies
-@app.post("/find_similar_movies")
+@app.post("/generate_prompt")
 async def generate_prompt(query: MovieQuery):
     plot_embedding = embedding_model.encode(query.plot).astype("float32")
     

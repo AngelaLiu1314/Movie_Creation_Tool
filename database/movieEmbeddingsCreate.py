@@ -83,7 +83,7 @@ def build_faiss_index(embeddings):
 
 # Main Code Block with iterative feature and FAISS index setup
 # Set up starting point
-start_id = "670f4fb52ecae2780899f7d7"
+start_id = "670fb0612ecae278089a27a6"
 query_filter = {"_id": {"$gte": ObjectId(start_id)}}
 
 for movie in movieDetails.find(query_filter).sort("_id", 1):
