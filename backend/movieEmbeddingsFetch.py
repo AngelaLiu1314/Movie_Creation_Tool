@@ -72,7 +72,7 @@ app.router.lifespan_context = lifespan
 
 # Endpoint to find similar movies
 @app.post("/find_similar_movies")
-async def find_similar_movies(query: MovieQuery):
+async def generate_prompt(query: MovieQuery):
     plot_embedding = embedding_model.encode(query.plot).astype("float32")
     
     # Filter embeddings by genre if genre is provided
