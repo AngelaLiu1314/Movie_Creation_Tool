@@ -93,6 +93,10 @@ for movie in movieDetails.find(query_filter).sort("_id", 1):
         print("Error in processing the movie")
         continue
 
+embeddings, imdb_ids = load_embeddings()
+faiss_map = build_faiss_index(embeddings)
+print("FAISS index created successfully!")
+
 # Close connection once finished
 db_client.close()
 print("MongoDB connection closed.")
