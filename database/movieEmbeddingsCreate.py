@@ -83,7 +83,7 @@ def build_faiss_index(embeddings):
 
 # Main Code Block with iterative feature and FAISS index setup
 # Set up starting point
-start_id = "670ed4a92ecae2780899af97"
+start_id = "670f4fb52ecae2780899f7d7"
 query_filter = {"_id": {"$gte": ObjectId(start_id)}}
 
 for movie in movieDetails.find(query_filter).sort("_id", 1):
@@ -93,9 +93,9 @@ for movie in movieDetails.find(query_filter).sort("_id", 1):
         print("Error in processing the movie")
         continue
 
-embeddings, imdb_ids = load_embeddings()
-faiss_map = build_faiss_index(embeddings)
-print("FAISS index created successfully!")
+# embeddings, imdb_ids = load_embeddings()
+# faiss_map = build_faiss_index(embeddings)
+# print("FAISS index created successfully!")
 
 # Close connection once finished
 db_client.close()
