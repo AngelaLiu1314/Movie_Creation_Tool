@@ -1,6 +1,7 @@
 import os
 import pymongo
 import requests
+import random
 from io import BytesIO
 from PIL import Image
 from dotenv import load_dotenv
@@ -28,8 +29,8 @@ model_id = "CompVis/stable-diffusion-v1-4"
 pipeline = StableDiffusionPipeline.from_pretrained(model_id)
 tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
 text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
-pipeline.to("cuda")  # Move model to GPU if available
-print("Model and tokenizer initialized.")
+pipeline.to("mps")  # Use MPS (Metal Performance Shaders) for Apple Silicon
+print("Model and tokenizer initialized on MPS backend.")
 
 # Define the PosterDataset class
 class PosterDataset(Dataset):
@@ -53,66 +54,57 @@ class PosterDataset(Dataset):
         image = Image.open(BytesIO(response.content)).convert("RGB")
         print(f"Fetched image for '{doc['title']}' directed by {doc['director']}.")
 
-        # Tokenize the prompt
+        # Tokenize and encode the prompt
         inputs = tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=77)
-        print(f"Tokenized prompt for '{doc['title']}'.")
+        text_embeddings = text_encoder(inputs.input_ids.to("mps"))[0]  # Move to MPS
+        print(f"Tokenized and encoded prompt for '{doc['title']}'.")
 
         return {
-            "pixel_values": pipeline.feature_extractor(image, return_tensors="pt")["pixel_values"].squeeze(0),
-            "input_ids": inputs["input_ids"].squeeze(0)
+            "pixel_values": pipeline.feature_extractor(image, return_tensors="pt")["pixel_values"].squeeze(0).to("mps"),
+            "input_ids": text_embeddings.squeeze(0)
         }
 
-# Function to load a batch with at least one movie per director, adding additional movies until batch size is met
-def load_batch(max_batch_size):
+# Function to organize documents by genre
+def organize_by_genre():
+    print("Organizing documents by genre...")
+    genre_pools = {}
+
+    # Query documents with trainingPrompt and posterLink
+    query = {"trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}
+    documents = movieDetails.find(query)
+
+    for doc in documents:
+        genres = doc.get("genre", [])
+        for genre in genres:
+            if genre not in genre_pools:
+                genre_pools[genre] = []
+            genre_pools[genre].append(doc)
+
+    print(f"Organized documents into {len(genre_pools)} genre pools.")
+    return genre_pools
+
+# Function to load a random batch with samples from each genre pool
+def load_batch(genre_pools, max_batch_size):
     print("Loading a new batch...")
     batch = []
-    director_movie_counts = {}
+    genres = list(genre_pools.keys())
 
-    pipeline = [
-        {"$match": {"trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}},
-        {"$group": {"_id": "$director"}}
-    ]
-    directors = movieDetails.aggregate(pipeline)
-    director_list = [director["_id"] for director in directors]
-    print(f"Found {len(director_list)} unique directors.")
+    # Calculate approximate samples per genre based on total batch size
+    samples_per_genre = max(1, max_batch_size // len(genres))
 
-    for director in director_list:
-        cursor = movieDetails.find(
-            {"director": director, "trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}
-        ).sort("_id", 1)
-        movies = list(cursor)
+    for genre in genres:
+        genre_pool = genre_pools[genre]
+        if len(genre_pool) > samples_per_genre:
+            selected_movies = random.sample(genre_pool, samples_per_genre)
+        else:
+            selected_movies = genre_pool  # If fewer than needed, take all
 
-        if movies:
-            batch.append(movies[0])
-            director_movie_counts[director] = 1
-            print(f"Added first movie for director '{director}'.")
+        batch.extend(selected_movies)
 
-    batch_size = len(batch)
-    while batch_size < max_batch_size:
-        added_any = False
-        for director in director_list:
-            current_count = director_movie_counts.get(director, 0)
-            cursor = movieDetails.find(
-                {"director": director, "trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}
-            ).sort("_id", 1).skip(current_count).limit(1)
-
-            additional_movies = list(cursor)
-            if additional_movies:
-                batch.append(additional_movies[0])
-                director_movie_counts[director] = current_count + 1
-                batch_size += 1
-                added_any = True
-                print(f"Added additional movie for director '{director}' (total now: {current_count + 1}).")
-
-                if batch_size >= max_batch_size:
-                    break
-
-        if not added_any:
-            print("No additional movies could be added in this pass.")
-            break
-
+    # Shuffle the batch for randomness
+    random.shuffle(batch)
     print(f"Loaded batch with {len(batch)} documents for training.")
-    return batch if batch else None
+    return batch[:max_batch_size]
 
 # Fine-tuning function for a single batch using a custom training loop
 def train_on_batch(documents, num_epochs=1):
@@ -129,12 +121,12 @@ def train_on_batch(documents, num_epochs=1):
             optimizer.zero_grad()
 
             # Get inputs
-            pixel_values = batch["pixel_values"].to("cuda")
-            input_ids = batch["input_ids"].to("cuda")
+            pixel_values = batch["pixel_values"]
+            input_ids = batch["input_ids"]
 
             # Forward pass
-            noise = torch.randn_like(pixel_values).to("cuda")
-            timesteps = torch.randint(0, 1000, (pixel_values.shape[0],), device="cuda").long()
+            noise = torch.randn_like(pixel_values).to("mps")
+            timesteps = torch.randint(0, 1000, (pixel_values.shape[0],), device="mps").long()
 
             loss = pipeline.unet(pixel_values, timesteps, encoder_hidden_states=input_ids, noise=noise).loss
             loss.backward()
@@ -148,12 +140,18 @@ def train_on_batch(documents, num_epochs=1):
 def batch_training(max_batch_size=1000, num_epochs=1):
     print(f"Starting batch training with max batch size: {max_batch_size}")
 
+    # Organize documents into genre pools
+    genre_pools = organize_by_genre()
+
+    # Loop until all documents are exhausted or training is complete
     while True:
-        documents = load_batch(max_batch_size)
+        # Load a batch of documents from genre pools
+        documents = load_batch(genre_pools, max_batch_size)
         if not documents:
             print("No more documents left to train on.")
             break
 
+        # Train on the current batch
         train_on_batch(documents, num_epochs)
 
 # Run the batch training process
