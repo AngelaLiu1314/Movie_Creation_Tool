@@ -77,65 +77,67 @@ def update_documents_posterImage(batch_size = 100000, start_after_id= start_afte
         print(f"Last processed start_after_id: {start_after_id}")
     ''''''
 
-def update_documents_trainingPrompt(start_after_id = start_after_id):
-    query = {"_id": {"$gt": ObjectId(start_after_id)}}
-    cursor = movieDetails.find(query).sort("_id", 1).limit(290000)
-    
-    last_processed_id = None
-    
-    for document in cursor:
-        try:
-            imdbID = document.get("imdbID", "unknown")
-            genres = document.get("genre", ["unknown"])  # Using first genre or 'unknown' if missing
-            directors = document.get("director", "unknown")
-            plot = document.get("plot", "No plot available")
-            
-            if len(genres) > 1:
-                genre_str = ", ".join(genres)
-            else:
-                genre_str = str(genres[0])
+def update_documents_trainingPrompt(movie):
+    try:
+        imdbID = movie["imdbID"]
+        genres = movie["genre"]
+        directors = movie["director"]
+        plot = movie["plot"]
         
-            if isinstance(directors, list):
-                if len(directors) == 1:
-                    director_str = directors[0]
-                elif len(directors) == 2:
-                    director_str = f"{directors[0]} and {directors[1]}"
-                else:
-                    director_str = ", ".join(directors[:-1]) + f", and {directors[-1]}"
+        if len(genres) > 1:
+            genre_str = ", ".join(genres)
+        else:
+            genre_str = str(genres[0])
+    
+        if isinstance(directors, list):
+            if len(directors) == 1:
+                director_str = directors[0]
+            elif len(directors) == 2:
+                director_str = f"{directors[0]} and {directors[1]}"
             else:
-                director_str = directors
+                director_str = ", ".join(directors[:-1]) + f", and {directors[-1]}"
+        else:
+            director_str = directors
 
-            # Generate the training prompt
-            training_prompt = f"{genre_str} movie directed by {director_str}. Plot: {plot}"
+        # Generate the training prompt
+        training_prompt = f"{genre_str} movie directed by {director_str}. Plot: {plot}"
 
-            try:
-                movieDetails.update_one(
-                    {"_id": document["_id"]},
-                    {"$set": {"trainingPrompt": training_prompt}}
-                )
-            except Exception as e:
-                print(f"Error updating document {document['_id']} in MongoDB: {e}")
-                traceback.print_exc()
-                continue
-            
-            last_processed_id = document["_id"]
-            
-            print(f"Updated document {document['_id']} with training prompt.")
+        try:
+            movieDetails.update_one(
+                {"_id": movie["_id"]},
+                {"$set": {"trainingPrompt": training_prompt}}
+            )
         except Exception as e:
-            print(f"Error processing document {document.get('_id')}: {e}")
+            print(f"Error updating document {movie['_id']} in MongoDB: {e}")
             traceback.print_exc()
-            continue  
-
-    if last_processed_id:
-        print(f"Last processed ObjectId: {last_processed_id}")
+        
+        print(f"Updated document {movie['_id']} with training prompt.")
+    except Exception as e:
+        print(f"Error processing document {movie.get('_id')}: {e}")
+        traceback.print_exc()
         
     print("Batch processing complete.")
 
 # uncomment the update function you want to run
 # update_documents_posterImage()
 
-start_after_id = "670d7a182e19c5e41e9e073b"
-update_documents_trainingPrompt(start_after_id)
+start_after_id = "670fd09e2ecae278089a940a"
+
+query_filter = {"_id": {"$gte": ObjectId(start_after_id)}}
+batch_size = 500
+cursor = movieDetails.find(query_filter).sort("_id", 1).limit(batch_size)
+
+while True:
+    batch = list(cursor)
+    if not batch:
+        break
+    for movie in batch:
+        try:
+            update_documents_trainingPrompt(movie)
+        except Exception as e:
+            print("Error in processing the movie")
+            continue
+    
 
 # Close connection once finished
 db_client.close()

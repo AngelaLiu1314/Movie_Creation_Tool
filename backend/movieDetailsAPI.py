@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 import os
 import base64
 
+'''
+You fire it up by running uvicorn backend.movieDetailsAPI:app --reload
+'''
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -35,19 +39,6 @@ except pymongo.errors.ConnectionFailure as e:
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Movies API. Visit /movies to explore the collection."}
-
-# Pydantic model for poster characteristics
-class PosterCharacteristics(BaseModel):
-    imdbID: str
-    posterLink: str
-    title: Optional[str]
-    tagline: Optional[str]
-    colorScheme: Optional[List[str]]
-    font: Optional[List[str]]
-    atmosphere: Optional[str]
-    imageElement: Optional[Dict[str, str]]
-    artStyle: Optional[str]
-    periodStyle: Optional[str]
 
 # Pydantic model for a movie
 class Movie(BaseModel):
@@ -115,6 +106,3 @@ def delete_movie(imdbID: str):
 
 print(get_movie_by_imdbID("tt32513166"))
 
-'''
-You fire it up by running uvicorn api.movieDetailsAPI:app --reload
-'''

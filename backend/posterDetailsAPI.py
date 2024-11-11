@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 import os
 from typing import Union, List
 
+'''
+You fire it up by running uvicorn api.posterDetailsAPI:app --reload
+'''
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -89,7 +93,3 @@ def delete_poster(imdbID: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Movie not found")
     return {"message": "Poster deleted successfully"}
-
-'''
-You fire it up by running uvicorn api.posterDetailsAPI:app --reload
-'''

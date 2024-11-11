@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 from typing import List, Optional
 import certifi
 
+'''
+You fire it up by running uvicorn backend.movieEmbeddingsFetch:app --reload
+'''
+
 load_dotenv() 
 app = FastAPI()
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
