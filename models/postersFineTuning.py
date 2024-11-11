@@ -5,43 +5,42 @@ from io import BytesIO
 from PIL import Image
 from dotenv import load_dotenv
 from torch.utils.data import Dataset, DataLoader
-from diffusers import StableDiffusionPipeline, StableDiffusionTrainer
-from transformers import AutoTokenizer
+from diffusers import StableDiffusionPipeline
+from transformers import CLIPTokenizer, CLIPTextModel
+import torch
+import torch.optim as optim
 import certifi
-from tqdm import tqdm
 
 # Load environment variables
 load_dotenv()
 mongodb_uri = os.getenv('Mongo_URI')
 
 # Connect to MongoDB
+print("Connecting to MongoDB...")
 client = pymongo.MongoClient(mongodb_uri, tlsCAFile=certifi.where())
 db = client["movies"]
 movieDetails = db.get_collection("movieDetails")
+print("Connected to MongoDB and accessed 'movieDetails' collection.")
 
-# Initialize Stable Diffusion pipeline and tokenizer
+# Initialize Stable Diffusion pipeline and CLIP tokenizer/model
+print("Initializing Stable Diffusion pipeline and CLIP text model/tokenizer...")
 model_id = "CompVis/stable-diffusion-v1-4"
 pipeline = StableDiffusionPipeline.from_pretrained(model_id)
-tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
+pipeline.to("cuda")  # Move model to GPU if available
+print("Model and tokenizer initialized.")
 
 # Define the PosterDataset class
 class PosterDataset(Dataset):
     def __init__(self, documents):
-        """
-        Initialize with a list of documents from MongoDB. Each document contains
-        'trainingPrompt' and 'posterLink' fields for the prompt and image URL.
-        """
         self.documents = documents
+        print(f"PosterDataset initialized with {len(documents)} documents.")
 
     def __len__(self):
         return len(self.documents)
 
     def __getitem__(self, idx):
-        """
-        Fetches and processes an item by its index, including:
-        - Downloading the poster image
-        - Tokenizing the prompt
-        """
         doc = self.documents[idx]
         image_url = doc.get("posterLink")
         prompt = doc.get("trainingPrompt")
@@ -52,9 +51,11 @@ class PosterDataset(Dataset):
         # Fetch image from URL
         response = requests.get(image_url, timeout=10)
         image = Image.open(BytesIO(response.content)).convert("RGB")
+        print(f"Fetched image for '{doc['title']}' directed by {doc['director']}.")
 
         # Tokenize the prompt
         inputs = tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=77)
+        print(f"Tokenized prompt for '{doc['title']}'.")
 
         return {
             "pixel_values": pipeline.feature_extractor(image, return_tensors="pt")["pixel_values"].squeeze(0),
@@ -63,110 +64,100 @@ class PosterDataset(Dataset):
 
 # Function to load a batch with at least one movie per director, adding additional movies until batch size is met
 def load_batch(max_batch_size):
-    """
-    Loads a batch of documents with at least one movie per director, adding additional
-    movies from directors with multiple records until reaching the specified batch size.
-    """
-    # Initialize batch and a tracker for each director's processed count
+    print("Loading a new batch...")
     batch = []
     director_movie_counts = {}
-    
-    # Find all unique directors with a movie that has 'trainingPrompt' and 'posterLink'
+
     pipeline = [
         {"$match": {"trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}},
         {"$group": {"_id": "$director"}}
     ]
     directors = movieDetails.aggregate(pipeline)
     director_list = [director["_id"] for director in directors]
-    
-    # Ensure at least one movie per director in the batch
+    print(f"Found {len(director_list)} unique directors.")
+
     for director in director_list:
-        # Fetch all movies for the current director, sorted by `_id` to ensure consistent ordering
         cursor = movieDetails.find(
             {"director": director, "trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}
         ).sort("_id", 1)
-        
         movies = list(cursor)
-        
-        # Add the first movie for each director to the batch
+
         if movies:
             batch.append(movies[0])
-            director_movie_counts[director] = 1  # Track how many movies have been added for this director
-    
-    # Add additional movies from directors until batch size is reached
+            director_movie_counts[director] = 1
+            print(f"Added first movie for director '{director}'.")
+
     batch_size = len(batch)
     while batch_size < max_batch_size:
-        added_any = False  # Track if we add any movie in this loop
-
-        # Try to add one more movie per director where possible
+        added_any = False
         for director in director_list:
             current_count = director_movie_counts.get(director, 0)
             cursor = movieDetails.find(
                 {"director": director, "trainingPrompt": {"$exists": True}, "posterLink": {"$exists": True}}
-            ).sort("_id", 1).skip(current_count).limit(1)  # Skip already added movies for this director
+            ).sort("_id", 1).skip(current_count).limit(1)
 
             additional_movies = list(cursor)
             if additional_movies:
                 batch.append(additional_movies[0])
                 director_movie_counts[director] = current_count + 1
                 batch_size += 1
-                added_any = True  # Movie was added
+                added_any = True
+                print(f"Added additional movie for director '{director}' (total now: {current_count + 1}).")
 
                 if batch_size >= max_batch_size:
-                    break  # Exit if batch size is reached
+                    break
 
-        # If we could not add any new movie in this pass, stop to avoid infinite loop
         if not added_any:
+            print("No additional movies could be added in this pass.")
             break
 
-    print(f"Loaded {len(batch)} documents for training.")
+    print(f"Loaded batch with {len(batch)} documents for training.")
     return batch if batch else None
 
-# Fine-tuning function for a single batch
-def train_on_batch(documents):
-    """
-    Trains the model on a single batch of documents using Stable Diffusion's Trainer.
-    """
-    # Initialize dataset and dataloader for the batch
+# Fine-tuning function for a single batch using a custom training loop
+def train_on_batch(documents, num_epochs=1):
     dataset = PosterDataset(documents)
     dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
 
-    # Initialize the trainer
-    trainer = StableDiffusionTrainer(
-        model=pipeline.unet,
-        dataloader=dataloader,
-        text_encoder=pipeline.text_encoder,
-        vae=pipeline.vae,
-        noise_scheduler=pipeline.noise_scheduler,
-        tokenizer=tokenizer,
-        num_train_epochs=1,  # Adjust based on needs
-        gradient_accumulation_steps=4,
-    )
+    # Set up the optimizer
+    optimizer = optim.AdamW(pipeline.unet.parameters(), lr=5e-5)
+    print("Starting training for the current batch...")
 
-    # Train on this batch
-    trainer.train()
-    print("Batch training complete.")
+    for epoch in range(num_epochs):
+        print(f"Epoch {epoch + 1}/{num_epochs}")
+        for batch in dataloader:
+            optimizer.zero_grad()
+
+            # Get inputs
+            pixel_values = batch["pixel_values"].to("cuda")
+            input_ids = batch["input_ids"].to("cuda")
+
+            # Forward pass
+            noise = torch.randn_like(pixel_values).to("cuda")
+            timesteps = torch.randint(0, 1000, (pixel_values.shape[0],), device="cuda").long()
+
+            loss = pipeline.unet(pixel_values, timesteps, encoder_hidden_states=input_ids, noise=noise).loss
+            loss.backward()
+            optimizer.step()
+
+            print(f"Batch Loss: {loss.item()}")
+
+    print("Completed training for the current batch.")
 
 # Main function for batch training
-def batch_training(max_batch_size=1000):
-    """
-    Main loop for batch training, iterating through documents in batches.
-    """
+def batch_training(max_batch_size=1000, num_epochs=1):
     print(f"Starting batch training with max batch size: {max_batch_size}")
 
-    # Loop until there are no more documents left to train on
     while True:
-        # Load a batch of documents with the specified constraints
         documents = load_batch(max_batch_size)
         if not documents:
             print("No more documents left to train on.")
             break
 
-        # Train on the current batch
-        train_on_batch(documents)
+        train_on_batch(documents, num_epochs)
 
 # Run the batch training process
-batch_training(max_batch_size=1000)
+batch_training(max_batch_size=1000, num_epochs=1)
 
 # Close MongoDB connection
 client.close()
