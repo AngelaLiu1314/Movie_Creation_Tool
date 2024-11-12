@@ -34,48 +34,32 @@ mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # P
 
 start_after_id = ObjectId("670c676c660f80b2ceeec2a4")
 
-def update_documents_posterImage(batch_size = 100000, start_after_id= start_after_id):
-    query = {"_id": {"$gt": start_after_id}}
-    cursor = movieDetails.find(query).limit(batch_size)
+def update_documents_posterImage(movie):
+    poster_link = movie.get("posterLink")
 
-    batch_processed = False
+    if poster_link and poster_link != "N/A":
+        response = requests.get(poster_link)
+        try:
+            image = Image.open(BytesIO(response.content))
+            # Converting to bytes
+            img_byte_array = BytesIO()
+            image.save(img_byte_array, format="JPEG")
+            img_data = img_byte_array.getvalue()
 
-    for document in cursor:
-        poster_link = document.get("posterLink")
-
-        if poster_link and poster_link != "N/A":
-            response = requests.get(poster_link)
-            try:
-                image = Image.open(BytesIO(response.content))
-                # Converting to bytes
-                img_byte_array = BytesIO()
-                image.save(img_byte_array, format="JPEG")
-                img_data = img_byte_array.getvalue()
-
-                # Updating document
-                movieDetails.update_one(
-                    {"_id": document["_id"]},
-                    {"$set": {"posterImage": img_data}}
-                )
-                
-                print(f"Processed document ID: {document["_id"]}")
-                
-            except:
-                movieDetails.update_one(
-                    {"_id": document["_id"]},
-                    {"$set": {"posterImage": "N/A"}}
-                )
-                print("Couldn't get the image. Storing as N/A")
-        
-        # update the last processed ID
-        start_after_id = document["_id"]
-        batch_processed = True
-
-    if not batch_processed:
-        print("No more documents to process.")
-    else:
-        print(f"Last processed start_after_id: {start_after_id}")
-    ''''''
+            # Updating document
+            movieDetails.update_one(
+                {"_id": movie["_id"]},
+                {"$set": {"posterImage": img_data}}
+            )
+            
+            print(f"Processed document ID: {movie["_id"]}")
+            
+        except:
+            movieDetails.update_one(
+                {"_id": movie["_id"]},
+                {"$set": {"posterImage": "N/A"}}
+            )
+            print("Couldn't get the image. Storing as N/A")
 
 def update_documents_trainingPrompt(movie):
     try:
@@ -118,8 +102,7 @@ def update_documents_trainingPrompt(movie):
         
     print("Batch processing complete.")
 
-# uncomment the update function you want to run
-# update_documents_posterImage()
+# Uncomment the update function you want to run
 
 start_after_id = "670fd09e2ecae278089a940a"
 
@@ -133,6 +116,7 @@ while True:
         break
     for movie in batch:
         try:
+            # update_documents_posterImage()
             update_documents_trainingPrompt(movie)
         except Exception as e:
             print("Error in processing the movie")
