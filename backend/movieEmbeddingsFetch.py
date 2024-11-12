@@ -12,7 +12,8 @@ import certifi
 from fastapi.middleware.cors import CORSMiddleware
 
 '''
-You fire it up by running uvicorn backend.movieEmbeddingsFetch:app --reload
+You fire it up by running 
+uvicorn backend.movieEmbeddingsFetch:app --reload
 '''
 
 load_dotenv() 
