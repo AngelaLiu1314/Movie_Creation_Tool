@@ -9,6 +9,7 @@ from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 from typing import List, Optional
 import certifi
+from fastapi.middleware.cors import CORSMiddleware
 
 '''
 You fire it up by running uvicorn backend.movieEmbeddingsFetch:app --reload
@@ -17,6 +18,18 @@ You fire it up by running uvicorn backend.movieEmbeddingsFetch:app --reload
 load_dotenv() 
 app = FastAPI()
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
+
+origins = [
+    "http://localhost:3000"  #give access to different IPs here
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 try:
     db_client = pymongo.MongoClient(mongodb_uri, tlsCAFile=certifi.where()) 
