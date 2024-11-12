@@ -116,8 +116,18 @@ def classify_style(movie):
             _, predicted = torch.max(output, 1)
             predicted_class = class_names[predicted.item()]
 
-        # print(f"Predicted art style for the poster for {imdbID}, {title}: {predicted_class}")
-        return predicted_class
+        print(f"Predicted art style for the poster for {imdbID}, {title}: {predicted_class}")
+        
+        try:
+            movieDetails.update_one(
+                {"_id": movie["_id"]},
+                {"$set": {"posterStyle": predicted_class}}
+            )
+        except Exception as e:
+            print(f"Error updating document {movie['_id']} in MongoDB: {e}")
+            traceback.print_exc()
+        
+        print(f"Updated document {movie['_id']} with poster style.")
 
     except requests.exceptions.RequestException as e:
         print(f"Error downloading image: {e}")
@@ -180,7 +190,8 @@ while True:
         try:
             # update_documents_posterImage(movie)
             # classify_style(movie)
-            update_documents_trainingPrompt(movie)
+            # update_documents_trainingPrompt(movie)
+            print()
         except Exception as e:
             print("Error in processing the movie")
             continue
