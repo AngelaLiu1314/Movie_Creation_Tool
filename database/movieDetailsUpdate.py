@@ -10,6 +10,10 @@ import pandas as pd
 import certifi
 from PIL import Image
 from io import BytesIO
+import torch
+from torchvision import transforms, models
+from torchvision.models import ResNet18_Weights
+from transformers import BlipProcessor, BlipForConditionalGeneration
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file
@@ -60,6 +64,64 @@ def update_documents_posterImage(movie):
                 {"$set": {"posterImage": "N/A"}}
             )
             print("Couldn't get the image. Storing as N/A")
+
+# Define image transformations to match training
+data_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
+
+# Load pretrained ResNet18 model with updated syntax
+model_analysis = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+num_features = model_analysis.fc.in_features
+model_analysis.fc = torch.nn.Sequential(
+    torch.nn.Dropout(0.5),  # Dropout to match training
+    torch.nn.Linear(num_features, 3)  # 3 classes: photography, illustration, 3D digital art
+)
+
+# Load model state
+model_analysis.load_state_dict(torch.load('models/best_style_classifier.pth', map_location="cpu"))
+model_analysis.eval()
+
+# Device configuration
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model_analysis = model_analysis.to(device)
+
+# Define class names based on your dataset structure
+class_names = ['3d_digital_art', 'illustration', 'realistic_photography']
+
+def classify_style(movie):
+    # Retrieve movie poster URL from MongoDB
+    imdbID = movie["imdbID"]
+    movie = movieDetails.find_one({"imdbID": imdbID})
+    poster_url = movie.get("posterLink")
+    title = movie.get("title")
+
+    if not poster_url:
+        print(f"No poster URL found for IMDb ID {imdbID}")
+        return None
+
+    try:
+        # Download the poster image temporarily
+        response = requests.get(poster_url)
+        response.raise_for_status()
+        img = Image.open(BytesIO(response.content))
+
+        # Apply the transformations
+        img_tensor = data_transforms(img).unsqueeze(0).to(device)
+
+        # Run the model on the image
+        with torch.no_grad():
+            output = model_analysis(img_tensor)
+            _, predicted = torch.max(output, 1)
+            predicted_class = class_names[predicted.item()]
+
+        # print(f"Predicted art style for the poster for {imdbID}, {title}: {predicted_class}")
+        return predicted_class
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading image: {e}")
+        return None
 
 def update_documents_trainingPrompt(movie):
     try:
@@ -116,7 +178,8 @@ while True:
         break
     for movie in batch:
         try:
-            # update_documents_posterImage()
+            # update_documents_posterImage(movie)
+            # classify_style(movie)
             update_documents_trainingPrompt(movie)
         except Exception as e:
             print("Error in processing the movie")
