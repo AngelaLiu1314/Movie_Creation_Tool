@@ -60,8 +60,11 @@ def build_faiss_index(embeddings):
 
 # Request body for plot and genre input
 class MovieQuery(BaseModel):
+    title: str
     plot: str
     genre: Optional[str] = None
+    style: Optional[str] = None
+    isRetro: bool
 
 # Endpoint to find similar movies
 @app.post("/generate_prompt")

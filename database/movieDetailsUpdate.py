@@ -36,8 +36,6 @@ except pymongo.errors.ConnectionFailure as e:
 # Read in the main dataframe from which we'll get the IMDB IDs
 mainDF = pd.read_csv(os.getenv("IMDB_PROCESSED_DF_PATH"), low_memory= False) # Please store your respective csv file path in your .env file
 
-start_after_id = ObjectId("670c676c660f80b2ceeec2a4")
-
 def update_documents_posterImage(movie):
     poster_link = movie.get("posterLink")
 
@@ -176,7 +174,7 @@ def update_documents_trainingPrompt(movie):
 
 # Uncomment the update function you want to run
 
-start_after_id = "670fd09e2ecae278089a940a"
+start_after_id = "670d426128ad7f7da577c9cd"
 
 query_filter = {"_id": {"$gte": ObjectId(start_after_id)}}
 batch_size = 500
@@ -191,7 +189,7 @@ while True:
             # update_documents_posterImage(movie)
             # classify_style(movie)
             # update_documents_trainingPrompt(movie)
-            print()
+            print() # Comment this line out when you run any of the update functions
         except Exception as e:
             print("Error in processing the movie")
             continue
