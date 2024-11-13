@@ -173,9 +173,15 @@ def update_documents_trainingPrompt(movie):
     print("Batch processing complete.")
 
 # Uncomment the update function you want to run
-
-all_ids = [movie["_id"] for movie in movieDetails.find({"posterStyle": {"$exists": False}}, {"_id": 1}).sort("_id", 1)]
-batch_size = 300000
+start_id = "670db5812e19c5e41e9e86b5"
+all_ids = [
+    movie["_id"]
+    for movie in movieDetails.find(
+        {"_id": {"$gte": ObjectId(start_id)}, "posterStyle": {"$exists": False}},  # Main query filter
+        {"_id": 1}  # Projection to return only `_id`
+    ).sort("_id", 1)
+]
+batch_size = 100000
 batch_index = 0
 
 for id in all_ids[batch_index:batch_index+batch_size]:
