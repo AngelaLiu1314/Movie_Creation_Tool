@@ -174,7 +174,7 @@ def update_documents_trainingPrompt(movie):
 
 # Uncomment the update function you want to run
 
-start_after_id = "670d426128ad7f7da577c9cd"
+start_after_id = "670d439728ad7f7da577cca3"
 
 query_filter = {"_id": {"$gte": ObjectId(start_after_id)}}
 batch_size = 300000
