@@ -16,3 +16,4 @@ transformers
 diffusers
 faiss-cpu 
 sentence-transformers
+accelerate
