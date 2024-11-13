@@ -96,13 +96,14 @@ async def generate_prompt(query: MovieQuery):
     top_n_ids = [filtered_imdb_ids[i] for i in indices[0]]
     
     # Fetch movie titles
-    movie_titles = []
+    movie_titles = {}
     movies = movieDetails.find({"imdbID": {"$in": top_n_ids}})
-    for movie in movies:
-        movie_titles.append(movie["title"])
+    directors = movieDetails.find({"imdbID": {"$in": top_n_ids}})
+    for movie, director in zip(movies, directors):
+        movie_titles[movie] = director
     
     # Create prompt for Flux API
-    prompt = f"Create a poster for a movie with this plot: {query.plot}. The top 5 closest movies are {', '.join(movie_titles)}. Generate a poster that is as close to the posters for these movies."
+    prompt = f"Create a poster for a movie titled {query.title} with this plot: {query.plot}. The top 5 closest movies are {', '.join(movie_titles.keys)} by {', '.join(movie_titles.values)}, respectively. Generate a poster that stylistically resembles the posters for these movies. The title of this movie must be written clearly on the poster."
     
     return {"imdbIDs": top_n_ids, "movieTitles": movie_titles, "prompt": prompt}
     

@@ -174,27 +174,29 @@ def update_documents_trainingPrompt(movie):
 
 # Uncomment the update function you want to run
 
-start_after_id = "670d439728ad7f7da577cca3"
-
-query_filter = {"_id": {"$gte": ObjectId(start_after_id)}}
+all_ids = [movie["_id"] for movie in movieDetails.find({"posterStyle": {"$exists": False}}, {"_id": 1}).sort("_id", 1)]
 batch_size = 300000
-cursor = movieDetails.find(query_filter).sort("_id", 1).limit(batch_size)
+batch_index = 0
 
-while True:
-    batch = list(cursor)
-    if not batch:
-        break
-    for movie in batch:
-        try:
+for id in all_ids[batch_index:batch_index+batch_size]:
+    batch_index += 1
+    try:
+        # Retrieve the full movie document using the current id
+        movie = movieDetails.find_one({"_id": id})
+        
+        if movie:
             # update_documents_posterImage(movie)
             classify_style(movie)
             # update_documents_trainingPrompt(movie)
             # print() # Comment this line out when you run any of the update functions
-        except Exception as e:
-            print("Error in processing the movie")
-            continue
-    
+        else:
+            print(f"Movie with ID {id} not found.")
+    except Exception as e:
+        print("Error in processing the movie")
+        continue
 
+print(f"New batch index: {batch_index}")
+    
 # Close connection once finished
 db_client.close()
 print("MongoDB connection closed.")
