@@ -177,7 +177,7 @@ def update_documents_trainingPrompt(movie):
 start_after_id = "670d426128ad7f7da577c9cd"
 
 query_filter = {"_id": {"$gte": ObjectId(start_after_id)}}
-batch_size = 500
+batch_size = 300000
 cursor = movieDetails.find(query_filter).sort("_id", 1).limit(batch_size)
 
 while True:
@@ -187,9 +187,9 @@ while True:
     for movie in batch:
         try:
             # update_documents_posterImage(movie)
-            # classify_style(movie)
+            classify_style(movie)
             # update_documents_trainingPrompt(movie)
-            print() # Comment this line out when you run any of the update functions
+            # print() # Comment this line out when you run any of the update functions
         except Exception as e:
             print("Error in processing the movie")
             continue
