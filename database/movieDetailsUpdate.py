@@ -173,7 +173,7 @@ def update_documents_trainingPrompt(movie):
     print("Batch processing complete.")
 
 # Uncomment the update function you want to run
-start_id = "670db5812e19c5e41e9e86b5"
+start_id = "670dcd2d2e19c5e41e9eb41e"
 all_ids = [
     movie["_id"]
     for movie in movieDetails.find(

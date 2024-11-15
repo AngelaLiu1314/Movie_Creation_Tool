@@ -66,7 +66,7 @@ def add_release_year(movie):
 
 all_ids = [movie["_id"] for movie in movieDetails.find({}, {"_id": 1}).sort("_id", 1)]
 batch_size = 100000
-batch_index = 0
+batch_index = 100000
 
 for id in all_ids[batch_index:batch_index+batch_size]:
     batch_index += 1
