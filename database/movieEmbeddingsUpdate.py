@@ -33,58 +33,54 @@ try:
 except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
-
-def add_style(movie):
-    print()
-
-def add_release_year(movie):
-    release_date = movie.get("releaseDate")
-    if release_date:
-        try:
-            date_obj = datetime.datetime.strptime(release_date, "%Y-%m-%d")
-            release_year = str(date_obj.year)
-        except ValueError:
-            print(f"Incorrect date format for movie ID {movie['_id']}. Skipping.")
-            return
-    else:
-        print(f"No release date for movie ID {movie['_id']}. Skipping.")
-        return
-
-    try:
-        movieEmbeddings.update_one(
-            {"movie_id": movie["_id"]},
-            {"$set": {"releaseYear": release_year}}
-        )
-        print(f"release year for movie_id: {movie['_id']} added")
-        
-    except Exception as e:
-        print(f"Error updating document {movie['_id']} in MongoDB: {e}")
-        traceback.print_exc()
     
     
 # Uncomment the update function you want to run
 
-all_ids = [movie["_id"] for movie in movieDetails.find({}, {"_id": 1}).sort("_id", 1)]
-batch_size = 100000
-batch_index = 100000
-
-for id in all_ids[batch_index:batch_index+batch_size]:
-    batch_index += 1
+def update_schema(movie):
+    updated_doc = {
+        "movie_id": movie.get("movie_id"),
+        "title": movie.get("title"),
+        "imdbID": movie.get("imdbID"),
+        "embedding": movie.get("embedding")
+    }
+    
     try:
-        # Retrieve the full movie document using the current id
-        movie = movieDetails.find_one({"_id": id})
-        
-        if movie:
-            # add_style(movie)
-            add_release_year(movie)
-            # print() # Comment this line out when you run any of the update functions
-        else:
-            print(f"Movie with ID {id} not found.")
+        movieEmbeddings.update_one(
+            {"_id": movie["_id"]},
+            {"$set": updated_doc}
+        )
+        print(f"schema updated for {movie["_id"]}!")
     except Exception as e:
-        print("Error in processing the movie")
-        continue
+        print("Error processing", e)
 
-print(f"New batch index: {batch_index}")
+update_method = "cursor"
+# update_method = "id indexing"
+
+if update_method == "id indexing":
+    all_ids = [movie["_id"] for movie in movieEmbeddings.find({}, {"_id": 1}).sort("_id", 1)]
+    batch_size = 200000
+    batch_index = 0
+
+    for id in all_ids[batch_index:batch_index+batch_size]:
+        batch_index += 1
+        try:
+            # Retrieve the full movie document using the current id
+            movie = movieDetails.find_one({"_id": id})
+            
+            if movie:
+                print() # Comment this line out when you run any of the update functions
+            else:
+                print(f"Movie with ID {id} not found.")
+        except Exception as e:
+            print("Error in processing the movie")
+            continue
+
+    print(f"New batch index: {batch_index}")
+elif update_method == "cursor":
+    cursor = movieEmbeddings.find({}, {"_id": 1, "movie_id": 1, "title": 1, "imdbID": 1, "embedding": 1})
+    for movie in cursor:
+        update_schema(movie)
     
 
 # Close connection once finished

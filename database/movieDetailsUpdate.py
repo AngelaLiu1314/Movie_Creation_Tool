@@ -14,6 +14,7 @@ import torch
 from torchvision import transforms, models
 from torchvision.models import ResNet18_Weights
 from transformers import BlipProcessor, BlipForConditionalGeneration
+from datetime import datetime
 
 load_dotenv() 
 mongodb_uri = os.getenv('Mongo_URI') #retrieve mongodb uri from .env file

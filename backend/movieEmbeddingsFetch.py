@@ -3,13 +3,15 @@ import os
 import faiss
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import pymongo
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 from typing import List, Optional
 import certifi
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+
 
 '''
 You fire it up by running 
@@ -49,6 +51,11 @@ except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
     exit(1)
 
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Configure embedding generator
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Function to build FAISS index
@@ -62,50 +69,108 @@ def build_faiss_index(embeddings):
 class MovieQuery(BaseModel):
     title: str
     plot: str
-    genre: Optional[str] = None
-    style: Optional[str] = None
-    isRetro: bool
+    genre: Optional[str] = Field(None, description="Genre of the movie")
+    style: Optional[str] = Field(None, description="Poster style preference")
+    isRetro: bool = Field(False, description="Filter for retro movies (1970-1989)")
+
+def get_filtered_ids(query: MovieQuery):
+    try:
+        filter_query = {}
+
+        if query.genre:
+            filter_query["genre"] = query.genre
+
+        if query.style:
+            if query.style == "3D Digital Art":
+                filter_query["posterStyle"] = "3d_digital_art"
+            elif query.style == "Realistic Photography":
+                filter_query["posterStyle"] = "realistic_photography"
+            elif query.style == "Illustration (Animated)":
+                filter_query["posterStyle"] = "illustration"
+        
+        if query.isRetro == True:
+            filter_query["releaseDate"] = {"$gte": "1970-01-01", "$lte": "1989-12-31"}
+
+        cursor = movieDetails.find(filter_query, {"imdbID": 1})
+        
+        filtered_ids = []
+        for movie in cursor:
+            filtered_ids.append(movie["imdbID"])
+
+        if not filtered_ids:
+            raise HTTPException(status_code=404, detail="No movies matched the filters.")
+
+        return filtered_ids
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during filtering: {str(e)}")
 
 # Endpoint to find similar movies
 @app.post("/generate_prompt")
 async def generate_prompt(query: MovieQuery):
-    plot_embedding = embedding_model.encode(query.plot).astype("float32")
+    if not query.plot or query.plot.strip() == "" or not query.title or query.title.strip() == "":
+        raise HTTPException(status_code=400, detail="Your title or plot description cannot be empty.")
     
-    # Filter embeddings by genre if genre is provided
+    query_embedding = embedding_model.encode(query.plot).astype("float32")
+    
+    # Retrieve filtered IDs from movieDetails
+    filtered_ids = get_filtered_ids(query)
+    
+    if not filtered_ids:
+        raise HTTPException(status_code=404, detail="No movies matched the filters.")
+    
+    # Retrieve embeddings for the filtered IDs from movieEmbeddings
     filtered_embeddings = []
-    filtered_imdb_ids = []
-    
-    # If a genre is called in query, only extract those with that genre in the list of genres
-    if query.genre:
-        cursor = movieEmbeddings.find({"genres": query.genre})
-    else:
-        cursor = movieEmbeddings.find()
-    
-    for movie in cursor:
-        filtered_embeddings.append(movie["embedding"])
-        filtered_imdb_ids.append(movie["imdbID"])
+    filtered_embeddings_ids = []
+    missing_embeddings_ids = []
+
+    embeddings_cursor = movieEmbeddings.find({"imdbID": {"$in": filtered_ids}}, {"embedding": 1, "imdbID": 1})
+    for movie_embedding in embeddings_cursor:
+        if "embedding" in movie_embedding and "imdbID" in movie_embedding:
+            filtered_embeddings.append(movie_embedding["embedding"])
+            filtered_embeddings_ids.append(movie_embedding["imdbID"])
+        else:
+            missing_embeddings_ids.append(movie_embedding.get("imdbID"))
+
+    if missing_embeddings_ids:
+        logger.warning(f"Missing embeddings for IDs: {missing_embeddings_ids}")
     
     if not filtered_embeddings:
-        raise HTTPException(status_code=404, detail="No movies found for the selected genre")
+        raise HTTPException(status_code=404, detail="No valid embeddings found for the filtered movies.")
     
-    # Build FAISS index on filtered embeddings
-    faiss_index = build_faiss_index(np.array(filtered_embeddings).astype("float32"))
+    # Build FAISS Index
+    try:
+        faiss_index = build_faiss_index(np.array(filtered_embeddings).astype("float32"))
+        _, indices = faiss_index.search(np.expand_dims(query_embedding, axis=0), 5)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error building FAISS index or performing search: {str(e)}")
     
-    # Search for the top 5 closest movies
-    _, indices = faiss_index.search(np.expand_dims(plot_embedding, axis=0), 5)
-    top_n_ids = [filtered_imdb_ids[i] for i in indices[0]]
+    top_n_ids = []
+    for i in indices[0]:
+        top_n_ids.append(filtered_embeddings_ids[i])
     
-    # Fetch movie titles
-    movie_titles = {}
-    movies = movieDetails.find({"imdbID": {"$in": top_n_ids}})
-    directors = movieDetails.find({"imdbID": {"$in": top_n_ids}})
-    for movie, director in zip(movies, directors):
-        movie_titles[movie] = director
+    # Fetch movie titles and directors
+    titles_and_directors = {}
+    movies_cursor = movieDetails.find({"imdbID": {"$in": top_n_ids}}, {"title": 1, "director": 1, "imdbID": 1})
+    for movie in movies_cursor:
+        imdbID = movie["imdbID"]
+        titles_and_directors[imdbID] = {
+            "title": movie.get("title", "unknown title"),
+            "director": movie.get("director", "unknown director")
+        }
+    
+    # Create description using the top movies
+    top_movies_description = ""
+    for imdbID, details in titles_and_directors.items():
+        title = details.get("title", "unknown title")
+        director = details.get("director", "unknown director")
+        if top_movies_description:
+            top_movies_description += ", "
+        top_movies_description += f"{title} by {director}"
     
     # Create prompt for Flux API
-    prompt = f"Create a poster for a movie titled {query.title} with this plot: {query.plot}. The top 5 closest movies are {', '.join(movie_titles.keys)} by {', '.join(movie_titles.values)}, respectively. Generate a poster that stylistically resembles the posters for these movies. The title of this movie must be written clearly on the poster."
+    prompt = f"Create a poster for a movie titled {query.title} with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that stylistically resembles the posters for these movies. The title of this movie must be written clearly on the poster."
     
-    return {"imdbIDs": top_n_ids, "movieTitles": movie_titles, "prompt": prompt}
+    return {"imdbIDs": top_n_ids, "movieTitles": [details["title"] for details in titles_and_directors.values()], "prompt": prompt}
     
 @app.get("/get_available_genres")
 async def get_available_genres():
@@ -115,12 +180,12 @@ async def get_available_genres():
     unique_genres = set()
     
     # Query the movieEmbeddings collection to retrieve all genres
-    cursor = movieEmbeddings.find({}, {"genres": 1})  # Only fetch the 'genres' field
+    cursor = movieDetails.find({}, {"genre": 1})  # Only fetch the 'genres' field
 
     # Iterate over each document to add genres to the set
     for document in cursor:
-        genres = document.get("genres", [])
-        unique_genres.update(genres)  # Add each genre to the set
+        genre = document.get("genre", [])
+        unique_genres.update(genre)  # Add each genre to the set
 
     # Convert the set to a sorted list and return it
     return sorted(unique_genres)
