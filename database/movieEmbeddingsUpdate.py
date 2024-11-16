@@ -59,8 +59,8 @@ update_method = "cursor"
 
 if update_method == "id indexing":
     all_ids = [movie["_id"] for movie in movieEmbeddings.find({}, {"_id": 1}).sort("_id", 1)]
-    batch_size = 200000
-    batch_index = 0
+    batch_size = 100000
+    batch_index = 200000
 
     for id in all_ids[batch_index:batch_index+batch_size]:
         batch_index += 1
