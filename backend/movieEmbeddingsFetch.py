@@ -168,9 +168,15 @@ async def generate_prompt(query: MovieQuery):
         top_movies_description += f"{title} by {director}"
     
     # Create prompt for Flux API
-    prompt = f"Create a poster for a movie titled {query.title} with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that stylistically resembles the posters for these movies. The title of this movie must be written clearly on the poster."
+    if query.style == "Illustration (Animated)":
+        prompt = f"Create a poster for a movie with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that stylistically resembles the posters for these movies. The poster should be in a style of flat-image illustration style. The text '{query.title}' must be clearly visible as the title."
+    else:
+        prompt = f"Create a poster for a movie with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that stylistically resembles the posters for these movies. The text '{query.title}' must be clearly visible as the title."
+    
+    print(f"Generated Prompt: {prompt}")
     
     return {"imdbIDs": top_n_ids, "movieTitles": [details["title"] for details in titles_and_directors.values()], "prompt": prompt}
+    
     
 @app.get("/get_available_genres")
 async def get_available_genres():
