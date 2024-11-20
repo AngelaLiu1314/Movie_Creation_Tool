@@ -59,8 +59,7 @@ def process_movie_details(movie):
         "movie_id": movie["_id"],
         "title": movie["title"],
         "imdbID": imdb_id,
-        "embedding": embedding,
-        "genres": movie["genre"]
+        "embedding": embedding
     })
     
     print(f"Stored embedding for {movie['title']}, imdb id: {imdb_id}, movie id: {movie['_id']}")
@@ -83,7 +82,7 @@ def build_faiss_index(embeddings):
 
 # Main Code Block with iterative feature and FAISS index setup
 # Set up starting point
-start_id = "67125d56d534ed93e5567e3e"
+start_id = "671429685adfea172dd02b1c"
 batch_size = 100000
 query_filter = {"_id": {"$gte": ObjectId(start_id)}}
 cursor = movieDetails.find(query_filter).sort("_id", 1).limit(batch_size)

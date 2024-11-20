@@ -48,7 +48,13 @@ def update_schema(movie):
     try:
         movieEmbeddings.update_one(
             {"_id": movie["_id"]},
-            {"$set": updated_doc}
+            {
+                "$set": updated_doc,
+                "$unset": {
+                    "releaseYear": "",
+                    "genres": ""
+                    }
+            }
         )
         print(f"schema updated for {movie["_id"]}!")
     except Exception as e:
@@ -78,7 +84,7 @@ if update_method == "id indexing":
 
     print(f"New batch index: {batch_index}")
 elif update_method == "cursor":
-    cursor = movieEmbeddings.find({}, {"_id": 1, "movie_id": 1, "title": 1, "imdbID": 1, "embedding": 1})
+    cursor = movieEmbeddings.find({"releaseYear": { "$exists": True } })
     for movie in cursor:
         update_schema(movie)
     

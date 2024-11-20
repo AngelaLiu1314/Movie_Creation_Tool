@@ -41,11 +41,11 @@ try:
     db_client.server_info() 
     print("Connected successfully to the 'Movies' database!")
     
-    posterDetails = db.get_collection("posterDetails")
-    print("Connected successfully to the 'Posters' database!")
-    
     movieEmbeddings = db.get_collection("movieEmbeddings")
     print("Connected successfully to the 'Movie Embeddings' database!")
+    
+    userInputCollection = db.get_collection("userInput")
+    print("Connected successfully to the 'User Input' database!")
     
 except pymongo.errors.ConnectionFailure as e:
     print(f"Could not connect to MongoDB: {e}")
@@ -160,22 +160,42 @@ async def generate_prompt(query: MovieQuery):
     
     # Create description using the top movies
     top_movies_description = ""
+    top_movies_dict = {}
     for imdbID, details in titles_and_directors.items():
         title = details.get("title", "unknown title")
         director = details.get("director", "unknown director")
         if top_movies_description:
             top_movies_description += ", "
         top_movies_description += f"{title} by {director}"
+        top_movies_dict[title] = director
     
     # Create prompt for Flux API
     if query.style == "Illustration (Animated)":
-        prompt = f"Create a poster for a movie with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that stylistically resembles the posters for these movies. The poster should be in a style of flat-image illustration style. The text '{query.title}' must be clearly visible as the title."
+        prompt = f"Create an image (no text) for the poster for a movie with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that is in a flat-image illustration style."
+        
+        # if we manage to train and fine tune our own image generator on the posters we have in our db, the below command might produce better results 
+        # prompt = f"Create a poster thats closest to the posters for these movies: {top_movies_description}. Generate a poster that is in a style of flat-image illustration style. The text {query.title} must be clearly visible as the title."
+    elif query.style == "Realistic Photography":
+        prompt = f"Create an image (no text) that prominently features a close-up of the face of main subject for the poster for a movie with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that stylistically resembles that of the similar movies."
+        
     else:
-        prompt = f"Create a poster for a movie with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that stylistically resembles the posters for these movies. The text '{query.title}' must be clearly visible as the title."
+        prompt = f"Create an image (no text) for the poster for a movie with this plot: {query.plot}. The top 5 closest movies are {top_movies_description}. Generate a poster that stylistically resembles that of the similar movies."
+        
+        # if we manage to train and fine tune our own image generator on the posters we have in our db, the below command might produce better results
+        # prompt = f"Create a poster that's closest to the posters for these movies: {top_movies_description}. The text '{query.title}' must be clearly visible as the title."
     
     print(f"Generated Prompt: {prompt}")
     
-    return {"imdbIDs": top_n_ids, "movieTitles": [details["title"] for details in titles_and_directors.values()], "prompt": prompt}
+    userInputCollection.insert_one({
+        "title": query.title,
+        "plot": query.plot,
+        "genre": query.genre,
+        "style": query.style,
+        "similar_movies": top_movies_dict,
+        "generated_prompt": prompt
+    })
+    
+    return {"imdbIDs": top_n_ids, "movieTitles": top_movies_dict, "prompt": prompt}
     
     
 @app.get("/get_available_genres")
